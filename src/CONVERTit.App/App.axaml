@@ -1,0 +1,148 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="using:CONVERTit.App.Converters"
+             xmlns:loc="using:CONVERTit.App.Localization"
+             x:Class="CONVERTit.App.App"
+             Name="CONVERTit"
+             RequestedThemeVariant="Dark">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://CONVERTit/Theme/Colors.axaml" />
+        <ResourceInclude Source="avares://CONVERTit/Theme/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <conv:LabelConverter x:Key="Label" />
+      <conv:BytesConverter x:Key="Bytes" />
+      <conv:TimecodeConverter x:Key="Timecode" />
+      <conv:KbpsConverter x:Key="Kbps" />
+      <conv:SampleRateConverter x:Key="SampleRate" />
+      <conv:Mp3VbrConverter x:Key="Mp3Vbr" />
+      <conv:PercentConverter x:Key="Percent" />
+      <conv:KindBrushConverter x:Key="KindBrush" />
+      <conv:KindIconConverter x:Key="KindIcon" />
+      <conv:JobStateBrushConverter x:Key="JobStateBrush" />
+      <conv:JobStateIconConverter x:Key="JobStateIcon" />
+      <conv:LabelMultiConverter x:Key="LabelMulti" />
+      <conv:LocKeyConverter x:Key="LocKey" />
+      <conv:ErrorTextConverter x:Key="ErrorText" />
+
+      <!-- Choice labels (relabel on language change) -->
+      <DataTemplate x:Key="EnumLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="KbpsLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="kbps">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="AudioKbpsLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="audiokbps">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="RateLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="rate">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="VbrLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="vbr">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="VorbisLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="vorbis">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="FlacLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="flac">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="WidthLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="width">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="FpsLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="fps">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <!-- Neon accent instead of system blue: check marks, selection, switches, focus -->
+        <ColorPaletteResources x:Key="Dark"
+                               Accent="#FFBBF236"
+                               RegionColor="#FF0F0E13"
+                               AltHigh="#FF0F0E13"
+                               ListLow="#FF26252C"
+                               ListMedium="#FF2C2B33"
+                               ChromeMediumLow="#FF1C1B21"
+                               ChromeMedium="#FF26252C"
+                               ChromeLow="#FF131217"
+                               ChromeAltLow="#FFF4F4F2"
+                               BaseHigh="#FFF4F4F2" />
+        <ColorPaletteResources x:Key="Light"
+                               Accent="#FF8CC21A"
+                               RegionColor="#FFF4F4F6"
+                               BaseHigh="#FF111114" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://CONVERTit/Theme/Styles.axaml" />
+  </Application.Styles>
+
+</Application>

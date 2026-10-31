@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+    <RootNamespace>CONVERTit.App</RootNamespace>
+    <AssemblyName>CONVERTit</AssemblyName>
+    <AssemblyTitle>CONVERTit</AssemblyTitle>
+    <Description>CONVERTit – video, audio and image converter</Description>
+    <ApplicationIcon>Assets\convertit.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <!-- LibVLC: only the 64-bit native libraries are copied -->
+    <VlcWindowsX64Enabled>true</VlcWindowsX64Enabled>
+    <VlcWindowsX86Enabled>false</VlcWindowsX86Enabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Diagnostics" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="LibVLCSharp" />
+    <PackageReference Include="LibVLCSharp.Avalonia" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CONVERTit.Core\CONVERTit.Core.csproj" />
+    <ProjectReference Include="..\CONVERTit.Engines.Ffmpeg\CONVERTit.Engines.Ffmpeg.csproj" />
+    <ProjectReference Include="..\CONVERTit.Engines.Image\CONVERTit.Engines.Image.csproj" />
+    <ProjectReference Include="..\CONVERTit.Engines.Tags\CONVERTit.Engines.Tags.csproj" />
+    <ProjectReference Include="..\CONVERTit.Platform.Windows\CONVERTit.Platform.Windows.csproj" />
+  </ItemGroup>
+
+  <!-- License files and README ship next to the app (About page) -->
+  <ItemGroup>
+    <None Include="..\..\licenses\**\*" Link="licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\README.md" Link="README.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Icon for Windows notifications (registered as IconUri) -->
+    <None Include="Assets\logo-tile.png" Link="convertit.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

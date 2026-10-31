@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.AnimationView">
+  <parts:PageFrame>
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconGif}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrAnimation}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblFormat}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Formats}" SelectedItem="{Binding Gif.Format}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblStart}" />
+          <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="86400" Increment="0.5" Value="{Binding Gif.Start}" FormatString="0.### s" />
+
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblLength}" />
+          <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="600" Increment="0.5" Value="{Binding Gif.Duration}" FormatString="0.### s" />
+
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblFrameRate}" />
+          <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding FpsChoices}" SelectedItem="{Binding Gif.Fps}" ItemTemplate="{StaticResource FpsLabel}" />
+
+          <TextBlock Grid.Row="4" Text="{DynamicResource LblWidth}" />
+          <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding WidthChoices}" SelectedItem="{Binding Gif.Width}" ItemTemplate="{StaticResource WidthLabel}" />
+
+          <TextBlock Grid.Row="5" Text="{DynamicResource LblDither}" IsVisible="{Binding IsGif}" />
+          <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Dithers}" SelectedItem="{Binding Gif.Dither}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsGif}" />
+
+          <TextBlock Grid.Row="6" Text="{DynamicResource LblQuality}" IsVisible="{Binding IsWebp}" />
+          <Grid Grid.Row="6" Grid.Column="1" ColumnDefinitions="*,70" IsVisible="{Binding IsWebp}">
+            <Slider Minimum="0" Maximum="100" Value="{Binding Gif.Quality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="0" Maximum="100" Value="{Binding Gif.Quality}" FormatString="0" ShowButtonSpinner="False" />
+          </Grid>
+
+          <TextBlock Grid.Row="7" Text="{DynamicResource LblLoopCount}" />
+          <NumericUpDown Grid.Row="7" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Gif.LoopCount}" FormatString="0" />
+
+          <TextBlock Grid.Row="8" Text="{DynamicResource LblBoomerang}" />
+          <ToggleSwitch Grid.Row="8" Grid.Column="1" IsChecked="{Binding Gif.Boomerang}" OnContent="" OffContent="" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </parts:PageFrame>
+</UserControl>

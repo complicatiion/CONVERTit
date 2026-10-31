@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             x:Class="CONVERTit.App.Views.DependenciesView">
+  <!-- DataContext: DependenciesViewModel -->
+  <ScrollViewer>
+    <StackPanel Spacing="16" MaxWidth="1100" HorizontalAlignment="Left">
+
+      <!-- FFmpeg -->
+      <Border Classes="card" Padding="22">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Width="46" Height="46" CornerRadius="12" Background="{DynamicResource BrushChip}" Margin="0,0,14,0">
+              <PathIcon Data="{StaticResource IconChip}" Width="22" Height="22" Foreground="{DynamicResource BrushAccentIcon}" />
+            </Border>
+            <TextBlock Grid.Column="1" Classes="h2" Text="FFmpeg / ffprobe" VerticalAlignment="Center" />
+            <Border Grid.Column="2" Classes="pill ok" IsVisible="{Binding FfmpegReady}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" />
+                <TextBlock Classes="small" Text="{DynamicResource StateReady}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="pill warn" IsVisible="{Binding FfmpegMissing}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource IconAlert}" Width="14" Height="14" />
+                <TextBlock Classes="small" Text="{DynamicResource StateMissing}" />
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Border Classes="inset">
+            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto">
+              <TextBlock Classes="muted" Text="{DynamicResource LblVersion}" Margin="0,0,0,8" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Classes="pill neutral" HorizontalAlignment="Left" Margin="0,0,0,8">
+                <SelectableTextBlock Classes="small" Text="{Binding FfmpegVersion}" />
+              </Border>
+              <TextBlock Grid.Row="1" Classes="muted" Text="{DynamicResource LblSource}" Margin="0,0,0,8" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FfmpegSourceText}" Margin="0,0,0,8" />
+              <TextBlock Grid.Row="2" Classes="muted" Text="{DynamicResource LblPath}" Margin="0,0,0,8" VerticalAlignment="Center" />
+              <Border Grid.Row="2" Grid.Column="1" Classes="pill neutral" HorizontalAlignment="Left" Margin="0,0,0,8">
+                <SelectableTextBlock Classes="mono small" Text="{Binding FfmpegPath}" TextWrapping="Wrap" />
+              </Border>
+              <TextBlock Grid.Row="3" Classes="muted" Text="{DynamicResource LblBuild}" IsVisible="{Binding HasInstalledBuild}" />
+              <TextBlock Grid.Row="3" Grid.Column="1" Classes="small" Text="{Binding InstalledBuild}" IsVisible="{Binding HasInstalledBuild}" />
+            </Grid>
+          </Border>
+
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" IsVisible="{Binding IsBusy}" />
+
+          <!-- Status as a colored pill (installed and verified, update available, error …) -->
+          <Border Classes="pill" HorizontalAlignment="Center"
+                  Classes.ok="{Binding StatusIsOk}" Classes.warn="{Binding StatusIsWarn}" Classes.danger="{Binding StatusIsError}"
+                  Classes.neutral="{Binding StatusIsInfo}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Data="{Binding StatusIcon}" Width="14" Height="14" />
+              <TextBlock Classes="small" Text="{Binding StatusDisplay}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <WrapPanel HorizontalAlignment="Center">
+            <Button Margin="4,0,4,8" Command="{Binding CheckUpdateCommand}" IsEnabled="{Binding !IsBusy}">
+              <ctl:IconLabel Icon="{StaticResource IconRefresh}" Text="{DynamicResource BtnCheckUpdate}" />
+            </Button>
+            <Button Margin="4,0,4,8" Command="{Binding ChooseFolderCommand}" IsEnabled="{Binding !IsBusy}">
+              <ctl:IconLabel Icon="{StaticResource IconFolderSearch}" Text="{DynamicResource BtnChooseFfmpegFolder}" />
+            </Button>
+            <Button Margin="4,0,4,8" Command="{Binding ResetCustomCommand}" IsVisible="{Binding HasCustomPath}">
+              <ctl:IconLabel Icon="{StaticResource IconUndo}" Text="{DynamicResource BtnAutoDetect}" />
+            </Button>
+            <Button Margin="4,0,4,8" Command="{Binding OpenFolderCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFolder}" />
+            </Button>
+            <Button Margin="4,0,4,8" Classes="danger" Command="{Binding RemoveCommand}" IsVisible="{Binding IsDownloaded}">
+              <ctl:IconLabel Icon="{StaticResource IconDelete}" Text="{DynamicResource BtnRemove}" />
+            </Button>
+            <Button Margin="4,0,4,8" Classes="primary" Command="{Binding DownloadCommand}" IsEnabled="{Binding !IsBusy}">
+              <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadInstall}" />
+            </Button>
+          </WrapPanel>
+          <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
+            <Button Classes="link" Command="{Binding OpenReleasesCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconOpenInNew}" Text="github.com/BtbN/FFmpeg-Builds" IconSize="13" />
+            </Button>
+            <Button Classes="link" Command="{Binding OpenFfmpegLicenseCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconOpenInNew}" Text="ffmpeg.org/legal" IconSize="13" />
+            </Button>
+          </StackPanel>
+          <ctl:HintText Hint="{DynamicResource HintFfmpegLicense}" HorizontalAlignment="Center" TextAlignment="Center" />
+        </StackPanel>
+      </Border>
+
+      <!-- Hardware encoders -->
+      <Border Classes="card" Padding="22">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <PathIcon Data="{StaticResource IconGpu}" Width="20" Height="20" Foreground="{DynamicResource BrushAccentIcon}" Margin="0,0,10,0" />
+            <TextBlock Grid.Column="1" Classes="h2" Text="{DynamicResource HdrHardware}" />
+            <Button Grid.Column="2" Command="{Binding RetestCommand}" IsEnabled="{Binding FfmpegReady}">
+              <ctl:IconLabel Icon="{StaticResource IconRefresh}" Text="{DynamicResource BtnRetest}" />
+            </Button>
+          </Grid>
+          <Grid ColumnDefinitions="160,140,90,*" Margin="0,4,0,0">
+            <TextBlock Classes="section" Text="{DynamicResource ColEncoder}" />
+            <TextBlock Grid.Column="1" Classes="section" Text="{DynamicResource ColVendor}" />
+            <TextBlock Grid.Column="2" Classes="section" Text="{DynamicResource ColCodec}" />
+            <TextBlock Grid.Column="3" Classes="section" Text="{DynamicResource ColState}" />
+          </Grid>
+          <Border Classes="divider" />
+          <ItemsControl ItemsSource="{Binding Encoders}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="160,140,90,*" Margin="0,3">
+                  <TextBlock Classes="mono small" Text="{Binding Encoder}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding Vendor}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding Codec}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" Foreground="{DynamicResource BrushAccentIcon}" IsVisible="{Binding Works}" />
+                    <PathIcon Data="{StaticResource IconCloseCircle}" Width="14" Height="14" Foreground="{DynamicResource BrushTextDisabled}" IsVisible="{Binding !Works}" />
+                    <TextBlock Classes="small" Text="{Binding State}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- Components -->
+      <Border Classes="card" Padding="22">
+        <StackPanel Spacing="12">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <PathIcon Data="{StaticResource IconPackage}" Width="20" Height="20" Foreground="{DynamicResource BrushAccentIcon}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrComponents}" />
+          </StackPanel>
+          <Grid ColumnDefinitions="2*,1.2*,1.6*,2*" Margin="0,4,0,0">
+            <TextBlock Classes="section" Text="{DynamicResource ColComponent}" />
+            <TextBlock Grid.Column="1" Classes="section" Text="{DynamicResource ColVersion}" />
+            <TextBlock Grid.Column="2" Classes="section" Text="{DynamicResource ColLicense}" />
+            <TextBlock Grid.Column="3" Classes="section" Text="{DynamicResource ColUsage}" />
+          </Grid>
+          <Border Classes="divider" />
+          <ItemsControl ItemsSource="{Binding Components}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="2*,1.2*,1.6*,2*" Margin="0,3">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Version}" TextWrapping="Wrap" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="2" Text="{Binding License}" TextWrapping="Wrap" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="3" Classes="small muted" Text="{Binding Usage}" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

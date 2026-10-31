@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.IconView">
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconIcon}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrIconSizes}" />
+          </StackPanel>
+          <WrapPanel Margin="0,0,0,12">
+            <CheckBox Content="16 px" IsChecked="{Binding IconSettings.Size16}" Margin="0,0,16,6" />
+            <CheckBox Content="24 px" IsChecked="{Binding IconSettings.Size24}" Margin="0,0,16,6" />
+            <CheckBox Content="32 px" IsChecked="{Binding IconSettings.Size32}" Margin="0,0,16,6" />
+            <CheckBox Content="48 px" IsChecked="{Binding IconSettings.Size48}" Margin="0,0,16,6" />
+            <CheckBox Content="64 px" IsChecked="{Binding IconSettings.Size64}" Margin="0,0,16,6" />
+            <CheckBox Content="128 px" IsChecked="{Binding IconSettings.Size128}" Margin="0,0,16,6" />
+            <CheckBox Content="256 px" IsChecked="{Binding IconSettings.Size256}" Margin="0,0,16,6" />
+          </WrapPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblIconFit}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Fits}" SelectedItem="{Binding IconSettings.Fit}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblPadding}" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="40" Value="{Binding IconSettings.PaddingPercent}" FormatString="0 '%'" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblSharpenSmall}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding IconSettings.SharpenSmall}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblFavicon}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding IconSettings.FaviconPackage}" OnContent="" OffContent="" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Preview of the selected image on light and dark tiles -->
+      <Border Classes="card" IsVisible="{Binding Sources.HasSelection}">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconEye}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrPreview}" />
+            <ProgressBar IsIndeterminate="True" Width="60" Classes="thin" IsVisible="{Binding IsRendering}" />
+          </StackPanel>
+          <UniformGrid Columns="2">
+            <Border Background="{DynamicResource BrushTileLight}" CornerRadius="10" Padding="14" Margin="0,0,6,0" BorderThickness="1" BorderBrush="{DynamicResource BrushBorder}">
+              <ItemsControl ItemsSource="{Binding Previews}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Margin="6" Spacing="4" VerticalAlignment="Bottom">
+                      <Image Source="{Binding Image}" Width="{Binding DisplaySize}" Height="{Binding DisplaySize}" RenderOptions.BitmapInterpolationMode="None" />
+                      <TextBlock Classes="small" Foreground="#6B6B76" Text="{Binding Label}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+            <Border Background="{DynamicResource BrushTileDark}" CornerRadius="10" Padding="14" Margin="6,0,0,0" BorderThickness="1" BorderBrush="{DynamicResource BrushBorder}">
+              <ItemsControl ItemsSource="{Binding Previews}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Margin="6" Spacing="4" VerticalAlignment="Bottom">
+                      <Image Source="{Binding Image}" Width="{Binding DisplaySize}" Height="{Binding DisplaySize}" RenderOptions.BitmapInterpolationMode="None" />
+                      <TextBlock Classes="small" Foreground="#9A9AA3" Text="{Binding Label}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </UniformGrid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

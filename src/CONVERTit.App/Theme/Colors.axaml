@@ -1,0 +1,166 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    CONVERTit design tokens · one neon lime accent #BBF236 in both themes (icons, logo, switches, fills).
+    Rules: text and icons ON the green are always dark (#0F0E13). Green content that must stay readable in light
+    mode (selected sidebar entry, status pills) sits on a dark chip (BrushChip). Small green body text in light
+    mode uses BrushAccentText (#4F7A06). Orange = waiting/warning, red = error.
+    Light mode (v0.0.3) is a soft light grey instead of pure white to reduce glare.
+  -->
+  <ResourceDictionary.ThemeDictionaries>
+
+    <!-- ===================================================== Dark (default) -->
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="BrushBgApp" Color="#0F0E13" />
+      <SolidColorBrush x:Key="BrushBgSidebar" Color="#131217" />
+      <SolidColorBrush x:Key="BrushSurfaceCard" Color="#1C1B21" />
+      <SolidColorBrush x:Key="BrushSurfaceRaised" Color="#26252C" />
+      <SolidColorBrush x:Key="BrushSurfaceInput" Color="#211F26" />
+      <SolidColorBrush x:Key="BrushBorder" Color="#2C2B33" />
+      <SolidColorBrush x:Key="BrushBorderStrong" Color="#3A3942" />
+      <SolidColorBrush x:Key="BrushTextPrimary" Color="#F4F4F2" />
+      <SolidColorBrush x:Key="BrushTextSecondary" Color="#9A9AA3" />
+      <SolidColorBrush x:Key="BrushTextDisabled" Color="#5E5D66" />
+      <SolidColorBrush x:Key="BrushAccent" Color="#BBF236" />
+      <SolidColorBrush x:Key="BrushAccentHover" Color="#C8F75A" />
+      <SolidColorBrush x:Key="BrushAccentPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="BrushAccentSoft" Color="#24BBF236" />
+      <SolidColorBrush x:Key="BrushAccentText" Color="#BBF236" />
+      <SolidColorBrush x:Key="BrushAccentIcon" Color="#BBF236" />
+      <SolidColorBrush x:Key="BrushChip" Color="#24BBF236" />
+      <SolidColorBrush x:Key="BrushChipText" Color="#F4F4F2" />
+      <SolidColorBrush x:Key="BrushOnAccent" Color="#0F0E13" />
+      <SolidColorBrush x:Key="BrushSecondary" Color="#B4ACF6" />
+      <SolidColorBrush x:Key="BrushSecondarySoft" Color="#26B4ACF6" />
+      <SolidColorBrush x:Key="BrushOrange" Color="#F59E4B" />
+      <SolidColorBrush x:Key="BrushOrangeSoft" Color="#26F59E4B" />
+      <SolidColorBrush x:Key="BrushWarning" Color="#F2B84B" />
+      <SolidColorBrush x:Key="BrushWarningSoft" Color="#26F2B84B" />
+      <SolidColorBrush x:Key="BrushDanger" Color="#F0616D" />
+      <SolidColorBrush x:Key="BrushDangerSoft" Color="#26F0616D" />
+      <SolidColorBrush x:Key="BrushNeutralSoft" Color="#1FFFFFFF" />
+      <SolidColorBrush x:Key="BrushMenuHover" Color="#30BBF236" />
+      <SolidColorBrush x:Key="BrushPlayerBg" Color="#000000" />
+      <SolidColorBrush x:Key="BrushDropZone" Color="#14BBF236" />
+      <SolidColorBrush x:Key="BrushTileLight" Color="#F4F4F6" />
+      <SolidColorBrush x:Key="BrushTileDark" Color="#0F0E13" />
+
+      <!-- Fluent controls: accent fills with dark glyphs -->
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="#BBF236" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="#BBF236" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="#0F0E13" />
+      <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="#0F0E13" />
+      <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="#0F0E13" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFill" Color="#BBF236" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFillPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFillPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStroke" Color="#BBF236" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="RadioButtonCheckGlyphFill" Color="#0F0E13" />
+      <SolidColorBrush x:Key="RadioButtonCheckGlyphFillPointerOver" Color="#0F0E13" />
+      <SolidColorBrush x:Key="RadioButtonCheckGlyphFillPressed" Color="#0F0E13" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#BBF236" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#BBF236" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#0F0E13" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#0F0E13" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#0F0E13" />
+      <SolidColorBrush x:Key="SliderTrackValueFill" Color="#BBF236" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="SliderThumbBackground" Color="#BBF236" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="SystemControlHighlightListAccentLowBrush" Color="#24BBF236" />
+      <SolidColorBrush x:Key="SystemControlHighlightListAccentMediumBrush" Color="#33BBF236" />
+      <SolidColorBrush x:Key="SystemControlHighlightListAccentHighBrush" Color="#40BBF236" />
+      <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#BBF236" />
+      <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#66BBF236" />
+    </ResourceDictionary>
+
+    <!-- ===================================================== Light -->
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="BrushBgApp" Color="#E4E5EA" />
+      <SolidColorBrush x:Key="BrushBgSidebar" Color="#ECEDF1" />
+      <SolidColorBrush x:Key="BrushSurfaceCard" Color="#F3F4F7" />
+      <SolidColorBrush x:Key="BrushSurfaceRaised" Color="#E6E7EC" />
+      <SolidColorBrush x:Key="BrushSurfaceInput" Color="#F8F8FA" />
+      <SolidColorBrush x:Key="BrushBorder" Color="#D6D7DE" />
+      <SolidColorBrush x:Key="BrushBorderStrong" Color="#C3C4CD" />
+      <SolidColorBrush x:Key="BrushTextPrimary" Color="#17171C" />
+      <SolidColorBrush x:Key="BrushTextSecondary" Color="#5C5C67" />
+      <SolidColorBrush x:Key="BrushTextDisabled" Color="#A6A6B0" />
+      <SolidColorBrush x:Key="BrushAccent" Color="#BBF236" />
+      <SolidColorBrush x:Key="BrushAccentHover" Color="#C8F75A" />
+      <SolidColorBrush x:Key="BrushAccentPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="BrushAccentSoft" Color="#40BBF236" />
+      <SolidColorBrush x:Key="BrushAccentText" Color="#4F7A06" />
+      <SolidColorBrush x:Key="BrushAccentIcon" Color="#BBF236" />
+      <SolidColorBrush x:Key="BrushChip" Color="#1C1B21" />
+      <SolidColorBrush x:Key="BrushChipText" Color="#F4F4F2" />
+      <SolidColorBrush x:Key="BrushOnAccent" Color="#0F0E13" />
+      <SolidColorBrush x:Key="BrushSecondary" Color="#7D72E0" />
+      <SolidColorBrush x:Key="BrushSecondarySoft" Color="#267D72E0" />
+      <SolidColorBrush x:Key="BrushOrange" Color="#D97A1E" />
+      <SolidColorBrush x:Key="BrushOrangeSoft" Color="#26D97A1E" />
+      <SolidColorBrush x:Key="BrushWarning" Color="#B9800F" />
+      <SolidColorBrush x:Key="BrushWarningSoft" Color="#26F2B84B" />
+      <SolidColorBrush x:Key="BrushDanger" Color="#D93F4C" />
+      <SolidColorBrush x:Key="BrushDangerSoft" Color="#1FD93F4C" />
+      <SolidColorBrush x:Key="BrushNeutralSoft" Color="#14000000" />
+      <SolidColorBrush x:Key="BrushMenuHover" Color="#4DBBF236" />
+      <SolidColorBrush x:Key="BrushPlayerBg" Color="#0F0E13" />
+      <SolidColorBrush x:Key="BrushDropZone" Color="#26BBF236" />
+      <SolidColorBrush x:Key="BrushTileLight" Color="#F3F4F7" />
+      <SolidColorBrush x:Key="BrushTileDark" Color="#0F0E13" />
+
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="#BBF236" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="#A3D92A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="#A3D92A" />
+      <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="#0F0E13" />
+      <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="#0F0E13" />
+      <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="#0F0E13" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFill" Color="#BBF236" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFillPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFillPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStroke" Color="#A3D92A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePointerOver" Color="#A3D92A" />
+      <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="RadioButtonCheckGlyphFill" Color="#0F0E13" />
+      <SolidColorBrush x:Key="RadioButtonCheckGlyphFillPointerOver" Color="#0F0E13" />
+      <SolidColorBrush x:Key="RadioButtonCheckGlyphFillPressed" Color="#0F0E13" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#BBF236" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#A3D92A" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#0F0E13" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#0F0E13" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#0F0E13" />
+      <SolidColorBrush x:Key="SliderTrackValueFill" Color="#BBF236" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="SliderThumbBackground" Color="#BBF236" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#C8F75A" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#A3D92A" />
+      <SolidColorBrush x:Key="SystemControlHighlightListAccentLowBrush" Color="#40BBF236" />
+      <SolidColorBrush x:Key="SystemControlHighlightListAccentMediumBrush" Color="#55BBF236" />
+      <SolidColorBrush x:Key="SystemControlHighlightListAccentHighBrush" Color="#66BBF236" />
+      <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#A3D92A" />
+      <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#80BBF236" />
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+  <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+</ResourceDictionary>

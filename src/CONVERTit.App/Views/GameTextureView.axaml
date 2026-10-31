@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.GameTextureView">
+  <!-- DataContext: GameTextureViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconTexture}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrTexturePreset}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto">
+            <TextBlock Text="{DynamicResource LblPreset}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Presets}" SelectedItem="{Binding Preset}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblMaxTextureSize}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding MaxSizes}" SelectedItem="{Binding MaxSize}" ItemTemplate="{StaticResource WidthLabel}" />
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintTextures}" />
+        </StackPanel>
+      </Border>
+      <parts:ImageOptionsPanel DataContext="{Binding Image}" />
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

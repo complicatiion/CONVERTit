@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.CompressView">
+  <!-- DataContext: CompressViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+
+      <!-- Profile & goal -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconCompress}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrCompressGoal}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblProfile}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                      PlaceholderText="{DynamicResource PlaceholderProfile}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblCompressMode}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Modes}" SelectedItem="{Binding Options.Mode}" ItemTemplate="{StaticResource EnumLabel}" />
+
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblTargetSize}" IsVisible="{Binding IsTargetSize}" />
+            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto" IsVisible="{Binding IsTargetSize}">
+              <NumericUpDown Minimum="1" Maximum="100000" Increment="5" Value="{Binding Options.TargetMb}" FormatString="0" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="MB" VerticalAlignment="Center" Margin="10,0,0,0" />
+            </Grid>
+
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblTargetPercent}" IsVisible="{Binding IsPercent}" />
+            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,70" IsVisible="{Binding IsPercent}">
+              <Slider Minimum="5" Maximum="95" Value="{Binding Options.Percent}" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="1" Maximum="99" Value="{Binding Options.Percent}" FormatString="0 '%'" ShowButtonSpinner="False" />
+            </Grid>
+
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblStrength}" IsVisible="{Binding IsQuality}" />
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding Strengths}" SelectedItem="{Binding Options.Strength}"
+                      ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsQuality}" />
+
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblOnlyIfSmaller}" />
+            <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding Options.OnlyIfSmaller}" OnContent="" OffContent="" />
+
+            <TextBlock Grid.Row="6" Text="{DynamicResource LblStripMetadata}" />
+            <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Options.StripMetadata}" OnContent="" OffContent="" />
+          </Grid>
+
+          <!-- Own profiles -->
+          <Border Classes="divider" Margin="0,4,0,14" />
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBox Text="{Binding NewProfileName}" Watermark="{DynamicResource WatermarkProfileName}" Margin="0,0,8,0" />
+            <Button Grid.Column="1" Command="{Binding DeleteProfileCommand}" Margin="0,0,8,0">
+              <ctl:IconLabel Icon="{StaticResource IconDelete}" Text="{DynamicResource BtnDeleteProfile}" />
+            </Button>
+            <Button Grid.Column="2" Command="{Binding SaveProfileCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconSave}" Text="{DynamicResource BtnSaveProfile}" />
+            </Button>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Video -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconVideo}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrCompressVideo}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblCodec}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Codecs}" SelectedItem="{Binding Options.Codec}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblEncoder}" IsVisible="{Binding HasHardware}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Accelerations}" SelectedItem="{Binding Options.Acceleration}"
+                      ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding HasHardware}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblMaxResolution}" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding MaxResolutions}" SelectedItem="{Binding Options.MaxResolution}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblMaxFrameRate}" />
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding MaxFrameRates}" SelectedItem="{Binding Options.MaxFrameRate}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblVideoAudio}" />
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding VideoAudioBitrates}" SelectedItem="{Binding Options.VideoAudioKbps}" ItemTemplate="{StaticResource AudioKbpsLabel}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Audio files -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconAudio}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrCompressAudio}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto">
+            <TextBlock Text="{DynamicResource LblFormat}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding AudioFormats}" SelectedItem="{Binding Options.AudioFormat}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblBitrate}" IsVisible="{Binding IsQuality}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AudioBitrates}" SelectedItem="{Binding Options.AudioKbps}"
+                      ItemTemplate="{StaticResource KbpsLabel}" IsVisible="{Binding IsQuality}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Images -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconImage}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrCompressImages}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblFormat}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding ImageFormats}" SelectedItem="{Binding Options.ImageFormat}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblQuality}" />
+            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,70">
+              <Slider Minimum="10" Maximum="100" Value="{Binding Options.ImageQuality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="1" Maximum="100" Value="{Binding Options.ImageQuality}" FormatString="0" ShowButtonSpinner="False" />
+            </Grid>
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblMaxSide}" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding ImageMaxSides}" SelectedItem="{Binding Options.ImageMaxSide}" ItemTemplate="{StaticResource WidthLabel}" />
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintCompressImages}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

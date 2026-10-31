@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.GameAudioView">
+  <!-- DataContext: GameAudioViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconGamepad}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrGameAudioPreset}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto">
+            <TextBlock Text="{DynamicResource LblPreset}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Presets}" SelectedItem="{Binding Preset}" ItemTemplate="{StaticResource EnumLabel}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+      <parts:AudioOptionsPanel DataContext="{Binding Audio}" />
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>
