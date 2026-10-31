@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CONVERTit.Engines.Image</RootNamespace>
+    <AssemblyName>CONVERTit.Engines.Image</AssemblyName>
+    <Description>Image conversion with Magick.NET (ImageMagick): formats, quality, resize, multi-size ICO</Description>
+    <!-- Magick.NET-Q8-x64 is x64-only (avoids MSB3270) -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CONVERTit.Core\CONVERTit.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Q8 is enough for web formats; x64 package only (Windows x64 target) -->
+    <PackageReference Include="Magick.NET-Q8-x64" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CONVERTit.Core</RootNamespace>
+    <AssemblyName>CONVERTit.Core</AssemblyName>
+    <Description>CONVERTit core: options, format catalog, FFmpeg command builder, naming, job queue</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Options are observable models: the UI binds to them directly and they are saved as JSON -->
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CONVERTit.Core.Tests" />
+  </ItemGroup>
+
+</Project>

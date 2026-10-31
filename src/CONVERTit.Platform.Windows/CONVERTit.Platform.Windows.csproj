@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+    <RootNamespace>CONVERTit.Platform.Windows</RootNamespace>
+    <AssemblyName>CONVERTit.Platform.Windows</AssemblyName>
+    <Description>Windows integration: job object, title bar, taskbar progress, standby, notifications, Explorer menu</Description>
+    <!-- WinRT toasts call COM vtables through function pointers -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+</Project>

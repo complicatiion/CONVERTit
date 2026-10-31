@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CONVERTit.Engines.Tags</RootNamespace>
+    <AssemblyName>CONVERTit.Engines.Tags</AssemblyName>
+    <Description>Audio tags with TagLib#: ID3v1/ID3v2 (MP3), Vorbis comments (FLAC, OGG, Opus), MP4 atoms (M4A), covers</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CONVERTit.Core\CONVERTit.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- LGPL-2.1, used as an unmodified library (licenses/third-party/TAGLIBSHARP.md) -->
+    <PackageReference Include="TagLibSharp" />
+  </ItemGroup>
+
+</Project>

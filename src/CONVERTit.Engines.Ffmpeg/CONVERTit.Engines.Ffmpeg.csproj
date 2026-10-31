@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CONVERTit.Engines.Ffmpeg</RootNamespace>
+    <AssemblyName>CONVERTit.Engines.Ffmpeg</AssemblyName>
+    <Description>FFmpeg/ffprobe as external processes: locate, download, probe, run with progress</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CONVERTit.Core\CONVERTit.Core.csproj" />
+  </ItemGroup>
+
+</Project>
