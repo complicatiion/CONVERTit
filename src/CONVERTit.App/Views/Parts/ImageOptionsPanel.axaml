@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CONVERTit.App.Views.Parts.ImageOptionsPanel">
+  <!-- DataContext: ImageOptionsViewModel -->
+  <StackPanel Spacing="16">
+
+    <!-- Format & quality -->
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconImage}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrImageFormat}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblFormat}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Formats}" SelectedItem="{Binding Options.Format}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblQuality}" IsVisible="{Binding ShowQuality}" />
+          <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,70" IsVisible="{Binding ShowQuality}">
+            <Slider Minimum="1" Maximum="100" Value="{Binding Options.Quality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="1" Maximum="100" Value="{Binding Options.Quality}" FormatString="0" ShowButtonSpinner="False" />
+          </Grid>
+
+          <!-- PNG -->
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblPngCompression}" IsVisible="{Binding IsPng}" />
+          <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,70" IsVisible="{Binding IsPng}">
+            <Slider Minimum="0" Maximum="9" Value="{Binding Options.PngCompression}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="0" Maximum="9" Value="{Binding Options.PngCompression}" FormatString="0" ShowButtonSpinner="False" />
+          </Grid>
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblPngPalette}" IsVisible="{Binding IsPng}" />
+          <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding Options.PngPalette}" OnContent="" OffContent="" IsVisible="{Binding IsPng}" />
+          <TextBlock Grid.Row="4" Text="{DynamicResource LblPaletteColors}" IsVisible="{Binding ShowPaletteColors}" />
+          <NumericUpDown Grid.Row="4" Grid.Column="1" Minimum="2" Maximum="256" Value="{Binding Options.PaletteColors}" FormatString="0" IsVisible="{Binding ShowPaletteColors}" />
+
+          <!-- JPEG -->
+          <TextBlock Grid.Row="5" Text="{DynamicResource LblProgressive}" IsVisible="{Binding IsJpeg}" />
+          <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding Options.JpegProgressive}" OnContent="" OffContent="" IsVisible="{Binding IsJpeg}" />
+          <TextBlock Grid.Row="6" Text="{DynamicResource LblChroma}" IsVisible="{Binding IsJpeg}" />
+          <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding Chromas}" SelectedItem="{Binding Options.JpegChroma}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsJpeg}" />
+
+          <!-- WebP / AVIF / TIFF / GIF -->
+          <TextBlock Grid.Row="7" Text="{DynamicResource LblLossless}" IsVisible="{Binding IsWebp}" />
+          <ToggleSwitch Grid.Row="7" Grid.Column="1" IsChecked="{Binding Options.WebpLossless}" OnContent="" OffContent="" IsVisible="{Binding IsWebp}" />
+          <TextBlock Grid.Row="8" Text="{DynamicResource LblWebpMethod}" IsVisible="{Binding IsWebp}" />
+          <NumericUpDown Grid.Row="8" Grid.Column="1" Minimum="0" Maximum="6" Value="{Binding Options.WebpMethod}" FormatString="0" IsVisible="{Binding IsWebp}" />
+          <TextBlock Grid.Row="9" Text="{DynamicResource LblAvifSpeed}" IsVisible="{Binding IsAvif}" />
+          <NumericUpDown Grid.Row="9" Grid.Column="1" Minimum="0" Maximum="9" Value="{Binding Options.AvifSpeed}" FormatString="0" IsVisible="{Binding IsAvif}" />
+          <TextBlock Grid.Row="10" Text="{DynamicResource LblTiffCompression}" IsVisible="{Binding IsTiff}" />
+          <ComboBox Grid.Row="10" Grid.Column="1" ItemsSource="{Binding TiffCompressions}" SelectedItem="{Binding Options.TiffCompression}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsTiff}" />
+          <TextBlock Grid.Row="11" Text="{DynamicResource LblDither}" IsVisible="{Binding IsGif}" />
+          <ToggleSwitch Grid.Row="11" Grid.Column="1" IsChecked="{Binding Options.GifDither}" OnContent="" OffContent="" IsVisible="{Binding IsGif}" />
+          <TextBlock Grid.Row="12" Text="{DynamicResource LblKeepAnimation}" IsVisible="{Binding ShowAnimation}" />
+          <ToggleSwitch Grid.Row="12" Grid.Column="1" IsChecked="{Binding Options.KeepAnimation}" OnContent="" OffContent="" IsVisible="{Binding ShowAnimation}" />
+
+          <!-- Game textures: DDS / TGA -->
+          <TextBlock Grid.Row="15" Text="{DynamicResource LblDdsCompression}" IsVisible="{Binding IsDds}" />
+          <ComboBox Grid.Row="15" Grid.Column="1" ItemsSource="{Binding DdsCompressions}" SelectedItem="{Binding Options.DdsCompression}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsDds}" />
+          <TextBlock Grid.Row="16" Text="{DynamicResource LblDdsMipmaps}" IsVisible="{Binding IsDds}" />
+          <ToggleSwitch Grid.Row="16" Grid.Column="1" IsChecked="{Binding Options.DdsMipmaps}" OnContent="" OffContent="" IsVisible="{Binding IsDds}" />
+          <TextBlock Grid.Row="17" Text="{DynamicResource LblTgaRle}" IsVisible="{Binding IsTga}" />
+          <ToggleSwitch Grid.Row="17" Grid.Column="1" IsChecked="{Binding Options.TgaRle}" OnContent="" OffContent="" IsVisible="{Binding IsTga}" />
+
+          <!-- Transparency -->
+          <TextBlock Grid.Row="13" Text="{DynamicResource LblKeepTransparency}" IsVisible="{Binding SupportsAlpha}" />
+          <ToggleSwitch Grid.Row="13" Grid.Column="1" IsChecked="{Binding Options.KeepTransparency}" OnContent="" OffContent="" IsVisible="{Binding SupportsAlpha}" />
+          <TextBlock Grid.Row="14" Text="{DynamicResource LblBackground}" IsVisible="{Binding ShowBackground}" />
+          <Grid Grid.Row="14" Grid.Column="1" ColumnDefinitions="Auto,*" IsVisible="{Binding ShowBackground}">
+            <Border Width="30" Height="30" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource BrushBorderStrong}" Margin="0,0,8,0"
+                    Background="{Binding Options.BackgroundColor}" />
+            <TextBox Grid.Column="1" Text="{Binding Options.BackgroundColor}" Watermark="#FFFFFF" />
+          </Grid>
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- Size & metadata -->
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconResize}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrImageSize}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblResize}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding ResizeModes}" SelectedItem="{Binding Options.Resize}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblSize}" IsVisible="{Binding ShowSize}" />
+          <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,24,*" IsVisible="{Binding ShowSize}">
+            <NumericUpDown Minimum="0" Maximum="65535" Value="{Binding Options.Width}" FormatString="0" />
+            <TextBlock Grid.Column="1" Text="×" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Minimum="0" Maximum="65535" Value="{Binding Options.Height}" FormatString="0" />
+          </Grid>
+
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblPercent}" IsVisible="{Binding IsResizePercent}" />
+          <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="1" Maximum="1000" Value="{Binding Options.Percent}" FormatString="0 '%'" IsVisible="{Binding IsResizePercent}" />
+
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblScaleMode}" IsVisible="{Binding IsResizeExact}" />
+          <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ScaleModes}" SelectedItem="{Binding Options.ExactMode}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsResizeExact}" />
+
+          <TextBlock Grid.Row="4" Text="{DynamicResource LblNoUpscale}" IsVisible="{Binding ShowNoUpscale}" />
+          <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding Options.NoUpscale}" OnContent="" OffContent="" IsVisible="{Binding ShowNoUpscale}" />
+
+          <TextBlock Grid.Row="7" Text="{DynamicResource LblPowerOfTwo}" />
+          <ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding PowerOfTwoModes}" SelectedItem="{Binding Options.PowerOfTwo}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="5" Text="{DynamicResource LblAutoOrient}" />
+          <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding Options.AutoOrient}" OnContent="" OffContent="" />
+
+          <TextBlock Grid.Row="6" Text="{DynamicResource LblStripMetadata}" />
+          <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Options.StripMetadata}" OnContent="" OffContent="" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

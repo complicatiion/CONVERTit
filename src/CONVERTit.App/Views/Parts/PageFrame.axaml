@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.Parts.PageFrame">
+  <!--
+    Common frame of all conversion pages (DataContext: ConvertPageViewModel):
+    FFmpeg banner on top, sources + file info left, options (Content) right, footer with estimate and main action.
+  -->
+  <UserControl.Template>
+    <ControlTemplate>
+      <DockPanel>
+        <!-- FFmpeg missing -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,16" IsVisible="{Binding ShowFfmpegBanner}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <PathIcon Data="{StaticResource IconAlert}" Width="20" Height="20" Foreground="{DynamicResource BrushWarning}" Margin="0,0,12,0" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock FontWeight="SemiBold" Text="{DynamicResource BannerFfmpegTitle}" />
+              <TextBlock Classes="small muted" Text="{DynamicResource BannerFfmpegText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <Button Grid.Column="2" Classes="primary" Command="{Binding DownloadFfmpegCommand}" Margin="12,0,0,0">
+              <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadFfmpeg}" />
+            </Button>
+          </Grid>
+        </Border>
+
+        <!-- Footer: estimate left, main action right -->
+        <Border DockPanel.Dock="Bottom" Padding="0,14,0,0">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsVisible="{Binding HasEstimate}">
+              <PathIcon Data="{StaticResource IconDatabase}" Width="16" Height="16" Foreground="{DynamicResource BrushTextSecondary}" />
+              <TextBlock Classes="muted" Text="{Binding EstimateText}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Classes="fixed" Command="{Binding Sources.ClearCommand}" IsEnabled="{Binding Sources.HasItems}">
+                <ctl:IconLabel Icon="{StaticResource IconBroom}" Text="{DynamicResource BtnClearList}" />
+              </Button>
+              <Button Command="{Binding StartSelectedCommand}" IsVisible="{Binding Sources.HasPartialSelection}"
+                      ToolTip.Tip="{DynamicResource TipAddSelected}">
+                <ctl:IconLabel Icon="{StaticResource IconPlaylistPlus}" Text="{Binding Sources.AddSelectedText}" />
+              </Button>
+              <Button Classes="primary fixed" Command="{Binding StartCommand}">
+                <ctl:IconLabel Icon="{StaticResource IconPlay}" Text="{DynamicResource BtnAddToQueue}" />
+              </Button>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="5*,18,6*">
+          <!-- Sources and file info -->
+          <Grid RowDefinitions="*,Auto">
+            <Border Classes="card">
+              <parts:SourcePanel DataContext="{Binding Sources}" />
+            </Border>
+            <Border Grid.Row="1" Classes="card" Margin="0,16,0,0" MaxHeight="300" IsVisible="{Binding Sources.HasSelection}">
+              <ScrollViewer>
+                <parts:InfoPanel DataContext="{Binding Sources}" />
+              </ScrollViewer>
+            </Border>
+          </Grid>
+
+          <!-- Options -->
+          <ScrollViewer Grid.Column="2" Padding="0,0,10,0">
+            <StackPanel Spacing="16">
+              <ContentPresenter Content="{TemplateBinding Content}" />
+              <Border Classes="card">
+                <parts:OutputPanel DataContext="{Binding Output}" />
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </DockPanel>
+    </ControlTemplate>
+  </UserControl.Template>
+</UserControl>

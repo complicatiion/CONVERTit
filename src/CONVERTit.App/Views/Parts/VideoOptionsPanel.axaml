@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             x:Class="CONVERTit.App.Views.Parts.VideoOptionsPanel">
+  <!-- DataContext: VideoOptionsViewModel -->
+  <StackPanel Spacing="16">
+
+    <!-- Format & quality -->
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconVideo}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrVideoFormat}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblContainer}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Containers}" SelectedItem="{Binding Options.Container}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblCodec}" />
+          <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Codecs}" SelectedItem="{Binding Options.Codec}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblEncoder}" />
+          <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Accelerations}" SelectedItem="{Binding Options.Acceleration}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsEnabled="{Binding HasHardware}" />
+
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblQualityMode}" />
+          <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding QualityModes}" SelectedItem="{Binding Options.QualityMode}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="4" Text="{DynamicResource LblQuality}" IsVisible="{Binding IsPresetMode}" />
+          <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding QualityPresets}" SelectedItem="{Binding Options.QualityPreset}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsPresetMode}" />
+
+          <TextBlock Grid.Row="5" Text="{DynamicResource LblCrf}" IsVisible="{Binding IsCrfMode}" />
+          <Grid Grid.Row="5" Grid.Column="1" ColumnDefinitions="*,70" IsVisible="{Binding IsCrfMode}">
+            <Slider Minimum="0" Maximum="{Binding CrfMax}" Value="{Binding Options.Crf}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="0" Maximum="{Binding CrfMax}" Value="{Binding Options.Crf}" FormatString="0" ShowButtonSpinner="False" />
+          </Grid>
+
+          <TextBlock Grid.Row="6" Text="{DynamicResource LblVideoBitrate}" IsVisible="{Binding IsBitrateMode}" />
+          <NumericUpDown Grid.Row="6" Grid.Column="1" Minimum="100" Maximum="200000" Increment="500" Value="{Binding Options.BitrateKbps}"
+                         FormatString="0 kbps" IsVisible="{Binding IsBitrateMode}" />
+
+          <!-- File size slider: share of the source size, the bitrate is derived per file -->
+          <TextBlock Grid.Row="7" Text="{DynamicResource LblTargetFileSize}" IsVisible="{Binding IsTargetSizeMode}" />
+          <StackPanel Grid.Row="7" Grid.Column="1" Spacing="4" IsVisible="{Binding IsTargetSizeMode}">
+            <Grid ColumnDefinitions="*,70">
+              <Slider Minimum="5" Maximum="100" Value="{Binding Options.TargetPercent}" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="5" Maximum="100" Value="{Binding Options.TargetPercent}" FormatString="0 '%'" ShowButtonSpinner="False" />
+            </Grid>
+            <TextBlock Classes="small accent" Text="{Binding SizeEstimateText}" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <TextBlock Grid.Row="8" Text="{DynamicResource LblSpeed}" />
+          <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding Speeds}" SelectedItem="{Binding Options.Speed}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="9" Text="{DynamicResource LblCompatible8Bit}" />
+          <ToggleSwitch Grid.Row="9" Grid.Column="1" IsChecked="{Binding Options.Compatible8Bit}" OnContent="" OffContent="" />
+        </Grid>
+        <ctl:HintText Hint="{Binding CrfHint}" IsVisible="{Binding IsCrfMode}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Picture: resolution, aspect ratio, frame rate -->
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconAspect}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrPicture}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblResolution}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Resolutions}" SelectedItem="{Binding Options.Resolution}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblSize}" IsVisible="{Binding IsCustomResolution}" />
+          <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,24,*" IsVisible="{Binding IsCustomResolution}">
+            <NumericUpDown Minimum="16" Maximum="16384" Increment="2" Value="{Binding Options.CustomWidth}" FormatString="0" />
+            <TextBlock Grid.Column="1" Text="×" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Minimum="16" Maximum="16384" Increment="2" Value="{Binding Options.CustomHeight}" FormatString="0" />
+          </Grid>
+
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblAspect}" IsVisible="{Binding ShowAspect}" />
+          <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Aspects}" SelectedItem="{Binding Options.Aspect}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding ShowAspect}" />
+
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblCustomAspect}" IsVisible="{Binding IsCustomAspect}" />
+          <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,24,*" IsVisible="{Binding IsCustomAspect}">
+            <NumericUpDown Minimum="1" Maximum="100" Value="{Binding Options.CustomAspectWidth}" FormatString="0" />
+            <TextBlock Grid.Column="1" Text=":" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Minimum="1" Maximum="100" Value="{Binding Options.CustomAspectHeight}" FormatString="0" />
+          </Grid>
+
+          <TextBlock Grid.Row="4" Text="{DynamicResource LblScaleMode}" IsVisible="{Binding ShowScaleMode}" />
+          <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding ScaleModes}" SelectedItem="{Binding Options.ScaleMode}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding ShowScaleMode}" />
+
+          <TextBlock Grid.Row="5" Text="{DynamicResource LblPadColor}" IsVisible="{Binding ShowPadColor}" />
+          <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Options.PadColor}" Watermark="#000000" IsVisible="{Binding ShowPadColor}" />
+
+          <TextBlock Grid.Row="6" Text="{DynamicResource LblNoUpscale}" IsVisible="{Binding ShowNoUpscale}" />
+          <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Options.NoUpscale}" OnContent="" OffContent="" IsVisible="{Binding ShowNoUpscale}" />
+
+          <TextBlock Grid.Row="7" Text="{DynamicResource LblFrameRate}" />
+          <ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding FrameRates}" SelectedItem="{Binding Options.FrameRate}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="8" Text="{DynamicResource LblCustomFps}" IsVisible="{Binding IsCustomFps}" />
+          <NumericUpDown Grid.Row="8" Grid.Column="1" Minimum="1" Maximum="240" Increment="1" Value="{Binding Options.CustomFps}"
+                         FormatString="0.###" IsVisible="{Binding IsCustomFps}" />
+
+          <TextBlock Grid.Row="9" Text="{DynamicResource LblFpsConversion}" IsVisible="{Binding ShowFpsConversion}" />
+          <ComboBox Grid.Row="9" Grid.Column="1" ItemsSource="{Binding FpsConversions}" SelectedItem="{Binding Options.FpsConversion}"
+                    ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding ShowFpsConversion}" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- Audio & streams -->
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconAudio}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrAudioStreams}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblAudioTrack}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding AudioModes}" SelectedItem="{Binding Options.Audio}" ItemTemplate="{StaticResource EnumLabel}" />
+
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblAudioBitrate}" IsVisible="{Binding ShowAudioBitrate}" />
+          <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AudioBitrates}" SelectedItem="{Binding Options.AudioBitrateKbps}"
+                    ItemTemplate="{StaticResource KbpsLabel}" IsVisible="{Binding ShowAudioBitrate}" />
+
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblKeepSubtitles}" IsVisible="{Binding ShowSubtitles}" />
+          <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding Options.KeepSubtitles}" OnContent="" OffContent="" IsVisible="{Binding ShowSubtitles}" />
+
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblKeepMetadata}" />
+          <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding Options.KeepMetadata}" OnContent="" OffContent="" />
+
+          <TextBlock Grid.Row="4" Text="{DynamicResource LblFastStart}" IsVisible="{Binding ShowFastStart}" />
+          <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding Options.FastStart}" OnContent="" OffContent="" IsVisible="{Binding ShowFastStart}" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

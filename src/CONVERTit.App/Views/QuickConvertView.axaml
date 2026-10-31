@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.QuickConvertView">
+  <parts:PageFrame>
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconQuick}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrQuickTargets}" />
+        </StackPanel>
+        <Grid ColumnDefinitions="Auto,*,Auto,280" RowDefinitions="Auto,Auto,Auto">
+          <!-- Video -->
+          <Border Width="34" Height="34" CornerRadius="9" Background="{DynamicResource BrushChip}" Margin="0,0,12,10">
+            <PathIcon Data="{StaticResource IconVideo}" Width="17" Height="17" Foreground="{DynamicResource BrushAccentIcon}" />
+          </Border>
+          <TextBlock Grid.Column="1" Text="{DynamicResource LblQuickVideo}" VerticalAlignment="Center" Margin="0,0,0,10" />
+          <Border Grid.Column="2" Classes="badge" Margin="0,0,12,10"><TextBlock Classes="small" Text="{Binding VideoCount}" /></Border>
+          <ComboBox Grid.Column="3" ItemsSource="{Binding VideoTargets}" SelectedItem="{Binding VideoTarget}" ItemTemplate="{StaticResource EnumLabel}" Margin="0,0,0,10" />
+          <!-- Audio -->
+          <Border Grid.Row="1" Width="34" Height="34" CornerRadius="9" Background="{DynamicResource BrushChip}" Margin="0,0,12,10">
+            <PathIcon Data="{StaticResource IconAudio}" Width="17" Height="17" Foreground="{DynamicResource BrushAccentIcon}" />
+          </Border>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{DynamicResource LblQuickAudio}" VerticalAlignment="Center" Margin="0,0,0,10" />
+          <Border Grid.Row="1" Grid.Column="2" Classes="badge" Margin="0,0,12,10"><TextBlock Classes="small" Text="{Binding AudioCount}" /></Border>
+          <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding AudioTargets}" SelectedItem="{Binding AudioTarget}" ItemTemplate="{StaticResource EnumLabel}" Margin="0,0,0,10" />
+          <!-- Images -->
+          <Border Grid.Row="2" Width="34" Height="34" CornerRadius="9" Background="{DynamicResource BrushChip}" Margin="0,0,12,0">
+            <PathIcon Data="{StaticResource IconImage}" Width="17" Height="17" Foreground="{DynamicResource BrushAccentIcon}" />
+          </Border>
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{DynamicResource LblQuickImage}" VerticalAlignment="Center" />
+          <Border Grid.Row="2" Grid.Column="2" Classes="badge" Margin="0,0,12,0"><TextBlock Classes="small" Text="{Binding ImageCount}" /></Border>
+          <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding ImageTargets}" SelectedItem="{Binding ImageTarget}" ItemTemplate="{StaticResource EnumLabel}" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </parts:PageFrame>
+</UserControl>

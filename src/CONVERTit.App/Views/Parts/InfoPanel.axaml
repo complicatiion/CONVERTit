@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CONVERTit.App.Views.Parts.InfoPanel">
+  <!-- DataContext: SourceListViewModel (selected file) -->
+  <Grid ColumnDefinitions="Auto,*">
+    <Border Width="168" Height="112" CornerRadius="10" ClipToBounds="True" Margin="0,0,16,0" VerticalAlignment="Top"
+            Background="{DynamicResource BrushSurfaceRaised}">
+      <Panel>
+        <PathIcon Data="{Binding SelectedItem.Kind, Converter={StaticResource KindIcon}}" Width="32" Height="32"
+                  Foreground="{Binding SelectedItem.Kind, Converter={StaticResource KindBrush}}" HorizontalAlignment="Center" />
+        <Image Source="{Binding Preview}" Stretch="Uniform" IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNotNull}}" />
+      </Panel>
+    </Border>
+    <StackPanel Grid.Column="1" Spacing="6">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <PathIcon Data="{StaticResource IconInfo}" Width="16" Height="16" Foreground="{DynamicResource BrushAccentIcon}" />
+        <TextBlock Classes="h3" Text="{DynamicResource HdrFileInfo}" />
+        <Button Classes="icon small" Command="{Binding ShowInExplorerCommand}" ToolTip.Tip="{DynamicResource TipShowInExplorer}">
+          <PathIcon Data="{StaticResource IconFolderOpen}" />
+        </Button>
+      </StackPanel>
+      <ItemsControl ItemsSource="{Binding InfoRows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid ColumnDefinitions="120,*" Margin="0,1">
+              <TextBlock Classes="small muted" Text="{Binding Label}" />
+              <SelectableTextBlock Grid.Column="1" Classes="small" Text="{Binding Value}" TextWrapping="Wrap" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </Grid>
+</UserControl>

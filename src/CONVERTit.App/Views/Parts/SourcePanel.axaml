@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             x:Class="CONVERTit.App.Views.Parts.SourcePanel">
+  <!-- DataContext: SourceListViewModel -->
+  <DockPanel>
+    <!-- Toolbar -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding AddFilesCommand}">
+          <Panel>
+            <ctl:IconLabel Icon="{StaticResource IconFilePlus}" Text="{DynamicResource BtnAddFiles}" IsVisible="{Binding MultiFile}" />
+            <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFile}" IsVisible="{Binding SingleFile}" />
+          </Panel>
+        </Button>
+        <Button Command="{Binding AddFolderCommand}" IsVisible="{Binding MultiFile}">
+          <ctl:IconLabel Icon="{StaticResource IconFolderPlus}" Text="{DynamicResource BtnAddFolder}" />
+        </Button>
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+        <!-- Mini player on/off (audio lists) -->
+        <ToggleButton Classes="icon" IsChecked="{Binding ShowMiniPlayer}" IsVisible="{Binding HasMiniPlayer}" ToolTip.Tip="{DynamicResource TipMiniPlayer}">
+          <PathIcon Data="{StaticResource IconMiniPlayer}" />
+        </ToggleButton>
+        <ToggleButton Classes="icon" IsChecked="{Binding ShowFolderOptions}" IsVisible="{Binding MultiFile}" ToolTip.Tip="{DynamicResource TipFolderOptions}">
+          <PathIcon Data="{StaticResource IconQuality}" />
+        </ToggleButton>
+        <Button Classes="icon" Command="{Binding SelectAllCommand}" IsEnabled="{Binding HasItems}" IsVisible="{Binding MultiFile}" ToolTip.Tip="{DynamicResource TipSelectAll}">
+          <PathIcon Data="{StaticResource IconSelectAll}" />
+        </Button>
+        <Button Classes="icon" Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="{DynamicResource TipRemoveSelected}">
+          <PathIcon Data="{StaticResource IconMinus}" />
+        </Button>
+        <Button Classes="icon" Command="{Binding ClearCommand}" IsEnabled="{Binding HasItems}" ToolTip.Tip="{DynamicResource TipClearList}">
+          <PathIcon Data="{StaticResource IconBroom}" />
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <!-- Folder batch options -->
+    <Border DockPanel.Dock="Top" Classes="inset" Margin="0,0,0,12" IsVisible="{Binding ShowFolderOptions}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="section" Text="{DynamicResource HdrFolderOptions}" />
+        <CheckBox IsChecked="{Binding Folder.Recursive}" Content="{DynamicResource OptRecursive}" />
+        <CheckBox IsChecked="{Binding Folder.AllOfKind}" Content="{DynamicResource OptAllOfKind}" />
+        <TextBox Text="{Binding Folder.Extensions}" Watermark="{DynamicResource WatermarkExtensions}" IsVisible="{Binding !Folder.AllOfKind}" />
+        <CheckBox IsChecked="{Binding Folder.SkipSameFormat}" Content="{DynamicResource OptSkipSameFormat}" />
+        <ctl:HintText Hint="{DynamicResource HintFolderOptions}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Footer: count -->
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="2,10,2,0" IsVisible="{Binding HasItems}">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Classes="small muted" Text="{Binding CountText}" />
+        <TextBlock Classes="small accent" Text="{Binding SelectionText}" IsVisible="{Binding HasPartialSelection}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsScanning}">
+        <ProgressBar IsIndeterminate="True" Width="60" Classes="thin" />
+        <TextBlock Classes="small muted" Text="{DynamicResource Scanning}" />
+      </StackPanel>
+    </Grid>
+
+    <Panel>
+      <!-- Empty: drop zone -->
+      <Panel Classes="dropzone" IsVisible="{Binding IsEmpty}" MinHeight="180">
+        <Rectangle Classes="dropzone" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24">
+          <PathIcon Data="{StaticResource IconTrayArrowDown}" Width="40" Height="40" Foreground="{DynamicResource BrushAccentIcon}" HorizontalAlignment="Center" />
+          <TextBlock Classes="h3" Text="{DynamicResource DropHereMulti}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" IsVisible="{Binding MultiFile}" />
+          <TextBlock Classes="h3" Text="{DynamicResource DropHereSingle}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" IsVisible="{Binding SingleFile}" />
+          <TextBlock Classes="hint" Text="{DynamicResource DropHereHint}" HorizontalAlignment="Center" TextAlignment="Center" IsVisible="{Binding MultiFile}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,4,0,0" IsVisible="{Binding IsScanning}">
+            <ProgressBar IsIndeterminate="True" Width="80" Classes="thin" />
+            <TextBlock Classes="small muted" Text="{DynamicResource Scanning}" />
+          </StackPanel>
+        </StackPanel>
+      </Panel>
+
+      <!-- File list -->
+      <!-- Ctrl / Shift select several files; Ctrl+A selects all -->
+      <ListBox x:Name="FileList" Classes="rows" SelectionMode="Multiple" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" IsVisible="{Binding HasItems}"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
+              <Border Width="32" Height="32" CornerRadius="8" Background="{Binding Kind, Converter={StaticResource KindBrush}, ConverterParameter=soft}" Margin="0,0,12,0">
+                <PathIcon Data="{Binding Kind, Converter={StaticResource KindIcon}}" Width="16" Height="16"
+                          Foreground="{Binding Kind, Converter={StaticResource KindBrush}}" HorizontalAlignment="Center" />
+              </Border>
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <ProgressBar IsIndeterminate="True" Width="40" Classes="thin" IsVisible="{Binding IsProbing}" VerticalAlignment="Center" />
+                  <TextBlock Classes="small muted" Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                  <PathIcon Data="{StaticResource IconAlertCircle}" Width="13" Height="13" Foreground="{DynamicResource BrushDanger}"
+                            IsVisible="{Binding HasError}" ToolTip.Tip="{Binding Error}" />
+                </StackPanel>
+              </StackPanel>
+              <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,6,0" Spacing="2">
+                <Border Classes="badge" HorizontalAlignment="Right">
+                  <TextBlock Classes="small" Text="{Binding Extension}" />
+                </Border>
+                <TextBlock Classes="small muted" Text="{Binding Size, Converter={StaticResource Bytes}}" HorizontalAlignment="Right" />
+              </StackPanel>
+              <!-- Mini player: play/pause and folder -->
+              <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center" Margin="0,0,4,0"
+                          IsVisible="{Binding $parent[UserControl].DataContext.ShowMiniPlayer}">
+                <Button Classes="icon small minplay" Classes.playing="{Binding IsPlaying}"
+                        Command="{Binding $parent[UserControl].DataContext.TogglePlayCommand}" CommandParameter="{Binding}"
+                        ToolTip.Tip="{DynamicResource TipPlayPause}">
+                  <Panel>
+                    <PathIcon Data="{StaticResource IconPlay}" IsVisible="{Binding !IsPlaying}" />
+                    <PathIcon Data="{StaticResource IconPause}" IsVisible="{Binding IsPlaying}" />
+                  </Panel>
+                </Button>
+                <Button Classes="icon small" Command="{Binding $parent[UserControl].DataContext.ShowInExplorerCommand}" CommandParameter="{Binding}"
+                        ToolTip.Tip="{DynamicResource TipShowInExplorer}">
+                  <PathIcon Data="{StaticResource IconFolderOpen}" />
+                </Button>
+              </StackPanel>
+              <Button Grid.Column="4" Classes="icon small" VerticalAlignment="Center"
+                      Command="{Binding $parent[UserControl].DataContext.RemoveCommand}" CommandParameter="{Binding}"
+                      ToolTip.Tip="{DynamicResource TipRemove}">
+                <PathIcon Data="{StaticResource IconClose}" />
+              </Button>
+
+              <!-- Progress of the playing row: click or drag to seek -->
+              <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" ColumnDefinitions="*,Auto" Margin="0,4,4,0" IsVisible="{Binding IsPlayerActive}">
+                <Slider Classes="mini" Minimum="0" Maximum="{Binding PlayDuration}" Value="{Binding PlayPosition}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="mono small muted" Text="{Binding PlayTimeText}" VerticalAlignment="Center" Margin="10,0,0,0" />
+              </Grid>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Panel>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.RemuxView">
+  <parts:PageFrame>
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconRemux}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrRemux}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblContainer}" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Containers}" SelectedItem="{Binding Remux.Container}" ItemTemplate="{StaticResource EnumLabel}" />
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblKeepSubtitles}" />
+          <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding Remux.KeepSubtitles}" OnContent="" OffContent="" />
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblFastStart}" IsVisible="{Binding ShowFastStart}" />
+          <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding Remux.FastStart}" OnContent="" OffContent="" IsVisible="{Binding ShowFastStart}" />
+        </Grid>
+        <ctl:HintText Hint="{DynamicResource HintRemux}" />
+      </StackPanel>
+    </Border>
+  </parts:PageFrame>
+</UserControl>

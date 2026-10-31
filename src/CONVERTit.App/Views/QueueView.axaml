@@ -1,0 +1,156 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:loc="using:CONVERTit.App.Localization"
+             x:Class="CONVERTit.App.Views.QueueView">
+  <!-- DataContext: QueueViewModel -->
+  <DockPanel>
+    <!-- Summary -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,16">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+        <StackPanel Margin="0,0,32,0">
+          <TextBlock Classes="section" Text="{DynamicResource KpiRunning}" Foreground="{DynamicResource BrushAccentText}" />
+          <TextBlock Classes="kpi" Text="{Binding RunningCount}" Foreground="{DynamicResource BrushAccentText}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Margin="0,0,32,0">
+          <TextBlock Classes="section" Text="{DynamicResource KpiWaiting}" Foreground="{DynamicResource BrushOrange}" />
+          <TextBlock Classes="kpi" Text="{Binding WaitingCount}" Foreground="{DynamicResource BrushOrange}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Margin="0,0,32,0">
+          <TextBlock Classes="section" Text="{DynamicResource KpiDone}" Foreground="{DynamicResource BrushTextPrimary}" />
+          <TextBlock Classes="kpi" Text="{Binding DoneCount}" Foreground="{DynamicResource BrushTextPrimary}" />
+        </StackPanel>
+        <StackPanel Grid.Column="3" Margin="0,0,32,0">
+          <TextBlock Classes="section" Text="{DynamicResource KpiFailed}" Foreground="{DynamicResource BrushDanger}" />
+          <TextBlock Classes="kpi" Text="{Binding FailedCount}" Foreground="{DynamicResource BrushDanger}" />
+        </StackPanel>
+        <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="6" Margin="0,0,24,0">
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding OverallProgress}" IsVisible="{Binding IsBusy}" />
+          <TextBlock Classes="small muted" Text="{Binding SavedText}" />
+        </StackPanel>
+        <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Command="{Binding ClearFinishedCommand}" IsEnabled="{Binding HasJobs}">
+            <ctl:IconLabel Icon="{StaticResource IconBroom}" Text="{DynamicResource BtnClearFinished}" />
+          </Button>
+          <Button Classes="danger" Command="{Binding CancelAllCommand}" IsEnabled="{Binding IsBusy}">
+            <ctl:IconLabel Icon="{StaticResource IconCancel}" Text="{DynamicResource BtnCancelAll}" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Console of the selected job -->
+    <Border DockPanel.Dock="Bottom" Classes="card" Margin="0,16,0,0" Padding="16,12">
+      <StackPanel Spacing="10">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <PathIcon Data="{StaticResource IconConsole}" Width="18" Height="18" Foreground="{DynamicResource BrushAccentIcon}" />
+            <TextBlock Classes="h3" Text="{DynamicResource HdrConsole}" />
+          </StackPanel>
+          <TextBlock Grid.Column="1" Classes="small muted" Margin="12,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                     Text="{Binding SelectedJob.SourceName}" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+            <Button Classes="icon small" Command="{Binding CopyCommandCommand}" IsEnabled="{Binding SelectedJob, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    ToolTip.Tip="{DynamicResource TipCopyCommand}">
+              <PathIcon Data="{StaticResource IconCopy}" />
+            </Button>
+            <Button Classes="icon small" Command="{Binding ToggleConsoleCommand}" ToolTip.Tip="{DynamicResource TipToggleConsole}">
+              <PathIcon Data="{StaticResource IconChevronDown}" />
+            </Button>
+          </StackPanel>
+        </Grid>
+        <TextBlock Classes="danger" TextWrapping="Wrap" Text="{Binding SelectedError}" IsVisible="{Binding SelectedHasError}" />
+        <TextBlock Classes="warning small" TextWrapping="Wrap" Text="{Binding SelectedWarnings}" IsVisible="{Binding SelectedHasWarnings}" />
+        <TextBox Classes="mono" Height="200" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" FontSize="12"
+                 Text="{Binding LogText}" IsVisible="{Binding ShowConsole}" CaretIndex="{Binding LogText.Length, Mode=OneWay}"
+                 Watermark="{DynamicResource WatermarkConsole}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Jobs -->
+    <Border Classes="card" Padding="10">
+      <Panel>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" IsVisible="{Binding IsEmpty}">
+          <PathIcon Data="{StaticResource IconQueue}" Width="44" Height="44" Foreground="{DynamicResource BrushTextDisabled}" HorizontalAlignment="Center" />
+          <TextBlock Classes="h3" Text="{DynamicResource QueueEmpty}" HorizontalAlignment="Center" />
+          <TextBlock Classes="hint" Text="{DynamicResource QueueEmptyHint}" HorizontalAlignment="Center" />
+        </StackPanel>
+        <ListBox Classes="rows" ItemsSource="{Binding Queue.Jobs}" SelectedItem="{Binding SelectedJob}" IsVisible="{Binding HasJobs}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="Auto,*,240,130,Auto" Margin="2,2">
+                <Border Width="34" Height="34" CornerRadius="9" Margin="0,0,12,0"
+                        Background="{Binding Kind, Converter={StaticResource KindBrush}, ConverterParameter=soft}">
+                  <PathIcon Data="{Binding Kind, Converter={StaticResource KindIcon}}" Width="16" Height="16"
+                            Foreground="{Binding Kind, Converter={StaticResource KindBrush}}" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1" Margin="0,0,12,0">
+                  <TextBlock Text="{Binding SourceName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SourcePath}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" FontWeight="SemiBold" Text="{Binding OperationKey, Converter={StaticResource LocKey}}" />
+                    <PathIcon Data="{StaticResource IconChevronRight}" Width="12" Height="12" Foreground="{DynamicResource BrushTextSecondary}" />
+                    <TextBlock Classes="small muted" Text="{Binding OutputName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding OutputPath}" />
+                  </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="4" Margin="0,0,12,0">
+                  <ProgressBar Classes="thin" Minimum="0" Maximum="1" Value="{Binding Progress}"
+                               Classes.failed="{Binding IsFailed}" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- Status pill: waiting orange, running accent, done neutral, failed red -->
+                    <Border Classes="pill" Padding="8,2" Background="{Binding State, Converter={StaticResource JobStateBrush}, ConverterParameter=soft}">
+                      <StackPanel Orientation="Horizontal" Spacing="5">
+                        <PathIcon Data="{Binding State, Converter={StaticResource JobStateIcon}}" Width="12" Height="12"
+                                  Foreground="{Binding State, Converter={StaticResource JobStateBrush}}" />
+                        <TextBlock Classes="small" FontWeight="SemiBold" Foreground="{Binding State, Converter={StaticResource JobStateBrush}}">
+                          <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource LabelMulti}">
+                              <Binding Path="State" />
+                              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+                            </MultiBinding>
+                          </TextBlock.Text>
+                        </TextBlock>
+                      </StackPanel>
+                    </Border>
+                    <TextBlock Classes="small muted" Text="{Binding StatusText, Converter={StaticResource LocKey}}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0">
+                  <TextBlock Classes="small" HorizontalAlignment="Right">
+                    <Run Text="{Binding SourceSize, Converter={StaticResource Bytes}}" />
+                    <Run Text=" → " Foreground="{DynamicResource BrushTextSecondary}" />
+                    <Run Text="{Binding OutputSize, Converter={StaticResource Bytes}}" />
+                  </TextBlock>
+                  <TextBlock Classes="small" HorizontalAlignment="Right" Foreground="{DynamicResource BrushAccentText}"
+                             Text="{Binding SavingsPercent, Converter={StaticResource Percent}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                  <Button Classes="icon small" IsVisible="{Binding IsActive}"
+                          Command="{Binding $parent[UserControl].DataContext.CancelCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipCancelJob}">
+                    <PathIcon Data="{StaticResource IconStopCircle}" />
+                  </Button>
+                  <Button Classes="icon small" IsVisible="{Binding IsFinished}"
+                          Command="{Binding $parent[UserControl].DataContext.RetryCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipRetry}">
+                    <PathIcon Data="{StaticResource IconRestart}" />
+                  </Button>
+                  <Button Classes="icon small" IsVisible="{Binding IsFinished}"
+                          Command="{Binding $parent[UserControl].DataContext.OpenOutputCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipOpenFile}">
+                    <PathIcon Data="{StaticResource IconOpenInNew}" />
+                  </Button>
+                  <Button Classes="icon small"
+                          Command="{Binding $parent[UserControl].DataContext.ShowOutputCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipShowInExplorer}">
+                    <PathIcon Data="{StaticResource IconFolderOpen}" />
+                  </Button>
+                  <Button Classes="icon small" IsVisible="{Binding IsFinished}"
+                          Command="{Binding $parent[UserControl].DataContext.RemoveCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipRemove}">
+                    <PathIcon Data="{StaticResource IconClose}" />
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Panel>
+    </Border>
+  </DockPanel>
+</UserControl>

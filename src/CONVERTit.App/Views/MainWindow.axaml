@@ -1,0 +1,264 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CONVERTit.App.ViewModels"
+        xmlns:ctl="using:CONVERTit.App.Controls"
+        x:Class="CONVERTit.App.Views.MainWindow"
+        Title="CONVERTit"
+        Icon="/Assets/convertit.ico"
+        Background="{DynamicResource BrushBgApp}"
+        Width="1400" Height="900"
+        MinWidth="1000" MinHeight="640"
+        WindowStartupLocation="CenterScreen">
+
+  <!-- Sidebar entries: pages, groups and dividers (shared by top and bottom navigation) -->
+  <Window.DataTemplates>
+    <DataTemplate DataType="{x:Type vm:NavDivider}">
+      <Border Classes="navdivider" />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:NavItem}">
+      <Button Classes="nav"
+              Classes.selected="{Binding IsSelected}"
+              Classes.child="{Binding IsChild}"
+              Command="{Binding $parent[Window].DataContext.NavigateCommand}"
+              CommandParameter="{Binding}"
+              ToolTip.Tip="{Binding Title}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <PathIcon Classes="navicon" Data="{Binding Icon}" Width="20" Height="20" />
+          <TextBlock Grid.Column="1" Classes="navtext" Text="{Binding Title}" Margin="14,0,0,0" VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis" />
+          <Panel Grid.Column="2" IsVisible="{Binding !$parent[Window].DataContext.IsSidebarCollapsed}">
+            <Border Classes="countbadge" Margin="8,0,0,0" IsVisible="{Binding HasBadge}">
+              <TextBlock Text="{Binding Badge}" />
+            </Border>
+          </Panel>
+        </Grid>
+      </Button>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:NavGroup}">
+      <StackPanel>
+        <Button Classes="nav group"
+                Classes.selected="{Binding HighlightHeader}"
+                Click="OnGroupClick"
+                Tag="{Binding}"
+                ToolTip.Tip="{Binding Title}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <PathIcon Classes="navicon" Data="{Binding Icon}" Width="20" Height="20" />
+            <TextBlock Grid.Column="1" Classes="navtext" Text="{Binding Title}" Margin="14,0,0,0" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" />
+            <PathIcon Grid.Column="2" Classes="chevron" Classes.expanded="{Binding ShowsExpanded}" Data="{StaticResource IconChevronRight}"
+                      IsVisible="{Binding !$parent[Window].DataContext.IsSidebarCollapsed}" />
+          </Grid>
+        </Button>
+        <ItemsControl Classes="navchildren" ItemsSource="{Binding Items}" IsVisible="{Binding ShowChildren}" Margin="0,0,0,4" />
+      </StackPanel>
+    </DataTemplate>
+  </Window.DataTemplates>
+
+  <!-- Display profiles scale everything inside (Settings › General) -->
+  <LayoutTransformControl x:Name="ScaleRoot">
+    <Panel>
+      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,*">
+
+        <!-- ===================================================== Sidebar -->
+        <Border Grid.RowSpan="2"
+                Classes="sidebar"
+                Classes.collapsed="{Binding IsSidebarCollapsed}"
+                Width="{Binding SidebarWidth}"
+                Background="{DynamicResource BrushBgSidebar}"
+                BorderBrush="{DynamicResource BrushBorder}"
+                BorderThickness="0,0,1,0">
+          <DockPanel>
+            <!-- Logo: click toggles the sidebar -->
+            <Button DockPanel.Dock="Top"
+                    Classes="logo"
+                    Margin="11,14,11,18"
+                    Command="{Binding ToggleSidebarCommand}"
+                    ToolTip.Tip="{DynamicResource TipToggleSidebar}">
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <PathIcon Data="{StaticResource IconLogo}" Width="30" Height="30" Foreground="{DynamicResource BrushAccentIcon}" />
+                <TextBlock Classes="logotext" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" LetterSpacing="0.4">
+                  <Run Text="CONVERT" /><Run Text="it" Foreground="{DynamicResource BrushAccentIcon}" />
+                </TextBlock>
+              </StackPanel>
+            </Button>
+
+            <ItemsControl DockPanel.Dock="Bottom" Margin="10,0,10,14" ItemsSource="{Binding BottomNav}" />
+            <Border DockPanel.Dock="Bottom" Classes="navdivider" Margin="16,8" />
+
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <ItemsControl Margin="10,0,10,0" ItemsSource="{Binding TopNav}" />
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
+
+        <!-- ===================================================== Header -->
+        <Border Grid.Column="1"
+                Padding="28,16,22,14"
+                BorderBrush="{DynamicResource BrushBorder}"
+                BorderThickness="0,0,0,1">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <PathIcon Data="{Binding CurrentPageIcon}" Width="22" Height="22" Margin="0,0,12,0"
+                      Foreground="{DynamicResource BrushAccentIcon}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Classes="h1" FontWeight="Normal" Foreground="{DynamicResource BrushTextSecondary}"
+                         Text="{Binding CurrentPage.GroupTitle}" IsVisible="{Binding CurrentPage.HasGroup}" />
+              <PathIcon Data="{StaticResource IconChevronRight}" Width="16" Height="16" Foreground="{DynamicResource BrushTextSecondary}"
+                        IsVisible="{Binding CurrentPage.HasGroup}" />
+              <TextBlock Classes="h1" Text="{Binding CurrentPage.Title}" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+              <!-- Background activity: loading files / media, FFmpeg download -->
+              <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding HasActivity}" VerticalAlignment="Center"
+                          ToolTip.Tip="{Binding ActivityText}">
+                <ProgressBar Classes="thin" Width="110" Minimum="0" Maximum="100" Value="{Binding ActivityProgress}"
+                             IsIndeterminate="{Binding ActivityIndeterminate}" VerticalAlignment="Center" />
+                <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" Text="{Binding ActivityText}"
+                           MaxWidth="260" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              </StackPanel>
+
+              <!-- Queue progress (click: open queue) -->
+              <Button Classes="link" Command="{Binding OpenQueueCommand}" IsVisible="{Binding QueueBusy}" ToolTip.Tip="{DynamicResource NavQueue}">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <ProgressBar Classes="thin" Width="130" Minimum="0" Maximum="100" Value="{Binding QueueProgress}" VerticalAlignment="Center" />
+                  <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" Text="{Binding QueueStatusText}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+
+              <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsTestingEncoders}" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource IconChip}" Width="14" Height="14" Foreground="{DynamicResource BrushTextSecondary}" />
+                <TextBlock Classes="small muted" Text="{DynamicResource TestingEncoders}" />
+              </StackPanel>
+
+              <!-- FFmpeg state: installed (check, accent) → dependencies; missing (orange) → setup dialog -->
+              <Button Classes="bare" Command="{Binding FfmpegPillCommand}" ToolTip.Tip="{Binding FfmpegPillTip}">
+                <Border Classes="pill" Classes.ok="{Binding FfmpegReady}" Classes.warn="{Binding !FfmpegReady}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" IsVisible="{Binding FfmpegReady}" />
+                    <PathIcon Data="{StaticResource IconAlert}" Width="14" Height="14" IsVisible="{Binding !FfmpegReady}" />
+                    <TextBlock Classes="small" Text="{Binding FfmpegPillText}" />
+                  </StackPanel>
+                </Border>
+              </Button>
+
+              <!-- Light / dark -->
+              <Button Classes="icon" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{DynamicResource TipToggleTheme}">
+                <Panel>
+                  <PathIcon Data="{StaticResource IconSun}" IsVisible="{Binding IsDark}" />
+                  <PathIcon Data="{StaticResource IconMoon}" IsVisible="{Binding !IsDark}" />
+                </Panel>
+              </Button>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- ===================================================== Content -->
+        <Panel Grid.Row="1" Grid.Column="1">
+          <ctl:PageHost Page="{Binding CurrentPage}" Margin="24,18,24,18" />
+
+          <!-- Notification (bottom right) -->
+          <Border x:Name="ToastHost"
+                  Classes="toast"
+                  Classes.error="{Binding ToastIsError}"
+                  IsVisible="{Binding HasToast}"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Margin="24,0,18,16"
+                  MinWidth="260"
+                  MaxWidth="480">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Classes="toastIcon" Width="18" Height="18" Margin="0,0,12,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Toast}" TextWrapping="Wrap" VerticalAlignment="Center" LineHeight="20" />
+              <Button Grid.Column="2" Classes="icon small" Margin="12,0,0,0" VerticalAlignment="Center" Command="{Binding CloseToastCommand}">
+                <PathIcon Data="{StaticResource IconClose}" />
+              </Button>
+            </Grid>
+          </Border>
+        </Panel>
+      </Grid>
+
+      <!-- ===================================================== FFmpeg setup (first start or "FFmpeg missing") -->
+      <Border x:Name="SetupOverlay" Classes="dim" IsVisible="{Binding ShowFfmpegSetup}">
+        <Border x:Name="SetupCard" Classes="dialog" Width="580" HorizontalAlignment="Center" VerticalAlignment="Center"
+                DataContext="{Binding Dependencies}">
+          <StackPanel Spacing="16">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Width="52" Height="52" CornerRadius="14" Background="{DynamicResource BrushChip}">
+                <PathIcon Data="{StaticResource IconChip}" Width="26" Height="26" Foreground="{DynamicResource BrushAccentIcon}" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="3">
+                <TextBlock Classes="h2" FontSize="19" Text="{DynamicResource SetupTitle}" />
+                <TextBlock Classes="muted" Text="{DynamicResource SetupSubtitle}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Grid>
+
+            <TextBlock Text="{DynamicResource SetupText}" TextWrapping="Wrap" LineHeight="21" IsVisible="{Binding FfmpegMissing}" />
+
+            <Border Classes="inset">
+              <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Classes="muted" Text="{DynamicResource LblSource}" Margin="0,0,0,8" />
+                <TextBlock Grid.Column="1" Text="github.com/BtbN/FFmpeg-Builds" Margin="0,0,0,8" />
+                <TextBlock Grid.Row="1" Classes="muted" Text="{DynamicResource LblLicense}" Margin="0,0,0,8" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{DynamicResource SetupLicense}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                <TextBlock Grid.Row="2" Classes="muted" Text="{DynamicResource LblDownloadSize}" Margin="0,0,0,8" IsVisible="{Binding HasDownloadSize}" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DownloadSizeText}" Margin="0,0,0,8" IsVisible="{Binding HasDownloadSize}" />
+                <TextBlock Grid.Row="3" Classes="muted" Text="{DynamicResource LblInstallFolder}" VerticalAlignment="Center" />
+                <Border Grid.Row="3" Grid.Column="1" Classes="pill neutral" HorizontalAlignment="Left">
+                  <TextBlock Classes="mono small" Text="{Binding InstallFolder}" TextTrimming="CharacterEllipsis" />
+                </Border>
+              </Grid>
+            </Border>
+
+            <StackPanel Spacing="8" IsVisible="{Binding IsBusy}">
+              <ProgressBar Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" />
+            </StackPanel>
+            <Border Classes="pill" HorizontalAlignment="Left"
+                    Classes.ok="{Binding StatusIsOk}" Classes.warn="{Binding StatusIsWarn}" Classes.danger="{Binding StatusIsError}"
+                    Classes.neutral="{Binding StatusIsInfo}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{Binding StatusIcon}" Width="14" Height="14" />
+                <TextBlock Classes="small" Text="{Binding StatusDisplay}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <ctl:HintText Hint="{DynamicResource SetupNote}" IsVisible="{Binding FfmpegMissing}" />
+
+            <!-- Main action right, others left -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{Binding $parent[Window].DataContext.CloseFfmpegSetupCommand}" IsEnabled="{Binding !IsBusy}"
+                        IsVisible="{Binding FfmpegMissing}">
+                  <ctl:IconLabel Icon="{StaticResource IconClose}" Text="{DynamicResource BtnLater}" />
+                </Button>
+                <Button Command="{Binding ChooseFolderCommand}" IsEnabled="{Binding !IsBusy}" IsVisible="{Binding FfmpegMissing}">
+                  <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnChooseFfmpegFolder}" />
+                </Button>
+              </StackPanel>
+              <Button Grid.Column="1" Classes="primary" Command="{Binding DownloadCommand}" IsEnabled="{Binding !IsBusy}"
+                      IsVisible="{Binding FfmpegMissing}">
+                <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnInstallFfmpeg}" />
+              </Button>
+              <Button Grid.Column="1" Classes="primary" Command="{Binding $parent[Window].DataContext.CloseFfmpegSetupCommand}"
+                      IsVisible="{Binding FfmpegReady}">
+                <ctl:IconLabel Icon="{StaticResource IconCheckCircle}" Text="{DynamicResource BtnDone}" />
+              </Button>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Border>
+
+      <!-- Drop overlay while files are dragged over the window -->
+      <Border x:Name="DropOverlay" IsVisible="False" Background="#99000000" IsHitTestVisible="False">
+        <Panel Classes="dropzone dragover" Margin="40">
+          <Rectangle Classes="dropzone" StrokeThickness="2.5" />
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+            <PathIcon Data="{StaticResource IconTrayArrowDown}" Width="56" Height="56" Foreground="{DynamicResource BrushAccentIcon}" />
+            <TextBlock Text="{DynamicResource DropOverlay}" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Panel>
+      </Border>
+    </Panel>
+  </LayoutTransformControl>
+</Window>

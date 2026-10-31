@@ -1,0 +1,226 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             xmlns:vlc="clr-namespace:LibVLCSharp.Avalonia;assembly=LibVLCSharp.Avalonia"
+             x:Class="CONVERTit.App.Views.TrimView">
+  <!-- DataContext: TrimViewModel (video or audio) -->
+  <DockPanel>
+    <!-- FFmpeg missing -->
+    <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,16" IsVisible="{Binding ShowFfmpegBanner}">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <PathIcon Data="{StaticResource IconAlert}" Width="20" Height="20" Foreground="{DynamicResource BrushWarning}" Margin="0,0,12,0" />
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+          <TextBlock FontWeight="SemiBold" Text="{DynamicResource BannerFfmpegTitle}" />
+          <TextBlock Classes="small muted" Text="{DynamicResource BannerFfmpegText}" TextWrapping="Wrap" />
+        </StackPanel>
+        <Button Grid.Column="2" Classes="primary" Command="{Binding DownloadFfmpegCommand}" Margin="12,0,0,0">
+          <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadFfmpeg}" />
+        </Button>
+      </Grid>
+    </Border>
+
+    <!-- Footer: result length, main action right -->
+    <Border DockPanel.Dock="Bottom" Padding="0,14,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <PathIcon Data="{StaticResource IconTimer}" Width="16" Height="16" Foreground="{DynamicResource BrushTextSecondary}" />
+          <TextBlock Classes="muted" Text="{Binding ResultText}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Classes="fixed" Command="{Binding ResetTrimCommand}">
+            <ctl:IconLabel Icon="{StaticResource IconUndo}" Text="{DynamicResource BtnReset}" />
+          </Button>
+          <Button Classes="primary fixed" Command="{Binding StartCommand}">
+            <ctl:IconLabel Icon="{StaticResource IconPlay}" Text="{DynamicResource BtnAddToQueue}" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid ColumnDefinitions="7*,18,5*">
+      <!-- ===================================================== Player -->
+      <Border Classes="card">
+        <DockPanel>
+          <!-- File -->
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
+            <Button Command="{Binding Sources.AddFilesCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFile}" />
+            </Button>
+            <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" IsVisible="{Binding HasSource}">
+              <TextBlock Text="{Binding Sources.SelectedItem.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <TextBlock Classes="small muted" Text="{Binding Sources.SelectedItem.Summary}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" IsVisible="{Binding HasSource}">
+              <Button Classes="icon" Command="{Binding UnloadCommand}" ToolTip.Tip="{DynamicResource TipUnload}">
+                <PathIcon Data="{StaticResource IconClose}" />
+              </Button>
+              <Button Classes="icon" Command="{Binding Sources.ShowInExplorerCommand}" ToolTip.Tip="{DynamicResource TipShowInExplorer}">
+                <PathIcon Data="{StaticResource IconFolder}" />
+              </Button>
+            </StackPanel>
+          </Grid>
+
+          <!-- Controls -->
+          <StackPanel DockPanel.Dock="Bottom" Spacing="10" Margin="0,12,0,0" IsEnabled="{Binding HasSource}">
+            <!-- Thumbnails (video) -->
+            <ItemsControl ItemsSource="{Binding Thumbnails}" IsVisible="{Binding IsVideo}" Height="48" ClipToBounds="True">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><UniformGrid Rows="1" Columns="10" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Image Source="{Binding}" Stretch="UniformToFill" Margin="1,0" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ctl:RangeBar Maximum="{Binding Duration}" Start="{Binding Trim.Start}" End="{Binding Trim.End}" Position="{Binding Position, Mode=TwoWay}"
+                          TrackBrush="{DynamicResource BrushSurfaceRaised}" RangeBrush="{DynamicResource BrushAccent}" MarkerBrush="{DynamicResource BrushTextPrimary}" />
+
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock Classes="mono small" Text="{Binding PositionText}" />
+              <TextBlock Grid.Column="2" Classes="mono small muted" Text="{Binding DurationText}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="*,Auto,*">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <!-- Mark start / end: icon buttons (|→ and →|), text in the tooltip -->
+                <Button Classes="mark" Command="{Binding SetStartCommand}" ToolTip.Tip="{DynamicResource TipSetStart}">
+                  <ctl:IconLabel Icon="{StaticResource IconArrowRightBold}" Text="{DynamicResource BtnSetStart}" />
+                </Button>
+                <Button Classes="mark" Command="{Binding SetEndCommand}" ToolTip.Tip="{DynamicResource TipSetEnd}">
+                  <ctl:IconLabel Icon="{StaticResource IconArrowLeftBold}" Text="{DynamicResource BtnSetEnd}" />
+                </Button>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                <Button Classes="icon" Command="{Binding GoToStartCommand}" ToolTip.Tip="{DynamicResource TipGoStart}">
+                  <PathIcon Data="{StaticResource IconStepBack}" />
+                </Button>
+                <Button Classes="icon" Command="{Binding StepCommand}" CommandParameter="-5" ToolTip.Tip="-5 s">
+                  <PathIcon Data="{StaticResource IconSkipBack}" />
+                </Button>
+                <Button Classes="play" Command="{Binding PlayPauseCommand}" IsEnabled="{Binding HasPlayer}" ToolTip.Tip="{DynamicResource TipPlayPause}">
+                  <Panel>
+                    <PathIcon Data="{StaticResource IconPlay}" Width="22" Height="22" IsVisible="{Binding !IsPlaying}" />
+                    <PathIcon Data="{StaticResource IconPause}" Width="22" Height="22" IsVisible="{Binding IsPlaying}" />
+                  </Panel>
+                </Button>
+                <Button Classes="icon" Command="{Binding StepCommand}" CommandParameter="5" ToolTip.Tip="+5 s">
+                  <PathIcon Data="{StaticResource IconSkipForward}" />
+                </Button>
+                <Button Classes="icon" Command="{Binding GoToEndCommand}" ToolTip.Tip="{DynamicResource TipGoEnd}">
+                  <PathIcon Data="{StaticResource IconStepForward}" />
+                </Button>
+              </StackPanel>
+              <Button Grid.Column="2" HorizontalAlignment="Right" Command="{Binding PreviewRangeCommand}" IsEnabled="{Binding HasPlayer}">
+                <ctl:IconLabel Icon="{StaticResource IconPlayCircle}" Text="{DynamicResource BtnPreviewRange}" />
+              </Button>
+            </Grid>
+
+            <!-- Exact times -->
+            <Grid ColumnDefinitions="Auto,160,24,Auto,160,*" Margin="0,4,0,0">
+              <TextBlock Classes="muted" Text="{DynamicResource LblStart}" VerticalAlignment="Center" Margin="0,0,10,0" />
+              <TextBox Grid.Column="1" Classes="mono" Text="{Binding StartText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Watermark="00:00.000" />
+              <TextBlock Grid.Column="3" Classes="muted" Text="{DynamicResource LblEnd}" VerticalAlignment="Center" Margin="0,0,10,0" />
+              <TextBox Grid.Column="4" Classes="mono" Text="{Binding EndText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Watermark="{DynamicResource WatermarkEnd}" />
+            </Grid>
+            <ctl:HintText Hint="{DynamicResource HintTrimKeys}" />
+          </StackPanel>
+
+          <!-- Picture / audio area -->
+          <Border CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BrushSurfaceRaised}" MinHeight="220">
+            <Panel>
+              <vlc:VideoView x:Name="Video" IsVisible="{Binding ShowVideoSurface}" />
+              <Image Source="{Binding Frame}" Stretch="Uniform" IsVisible="{Binding ShowStillFrame}" />
+              <!-- Audio: position only (with an open file) -->
+              <TextBlock Classes="mono" FontSize="22" Foreground="{DynamicResource BrushTextPrimary}" Text="{Binding PositionText}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding ShowAudioPosition}" />
+              <!-- Loading a (large) file -->
+              <Border Background="{DynamicResource BrushSurfaceRaised}" Opacity="0.94" IsVisible="{Binding IsLoadingMedia}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                  <ProgressBar IsIndeterminate="True" Width="180" Classes="thin" />
+                  <TextBlock Text="{DynamicResource LoadingMedia}" HorizontalAlignment="Center" />
+                </StackPanel>
+              </Border>
+              <!-- No file: drop zone like the Convert pages (icon, title, hint – each on its own line) -->
+              <Panel Classes="dropzone" Margin="12" IsVisible="{Binding !HasSource}">
+                <Rectangle Classes="dropzone" />
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24">
+                  <PathIcon Data="{StaticResource IconTrayArrowDown}" Width="40" Height="40" Foreground="{DynamicResource BrushAccentIcon}" HorizontalAlignment="Center" />
+                  <TextBlock Classes="h3" Text="{DynamicResource DropHereSingle}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                  <TextBlock Classes="hint" Text="{DynamicResource DropHereTrimHint}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                </StackPanel>
+              </Panel>
+            </Panel>
+          </Border>
+        </DockPanel>
+      </Border>
+
+      <!-- ===================================================== Options -->
+      <ScrollViewer Grid.Column="2" Padding="0,0,10,0">
+        <StackPanel Spacing="16">
+          <!-- Trim -->
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Classes="cardhead">
+                <PathIcon Data="{StaticResource IconTrim}" />
+                <TextBlock Classes="h2" Text="{DynamicResource HdrTrim}" />
+              </StackPanel>
+              <Grid Classes="opts" ColumnDefinitions="*,240" RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Text="{DynamicResource LblTrimEnabled}" />
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding Trim.TrimEnabled}" OnContent="" OffContent="" />
+                <TextBlock Grid.Row="1" Text="{DynamicResource LblTrimMode}" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Modes}" SelectedItem="{Binding Trim.Mode}" ItemTemplate="{StaticResource EnumLabel}" />
+                <TextBlock Grid.Row="2" Text="{DynamicResource LblFadeIn}" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="60" Increment="0.5" Value="{Binding Trim.FadeIn}" FormatString="0.# s" />
+                <TextBlock Grid.Row="3" Text="{DynamicResource LblFadeOut}" />
+                <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="60" Increment="0.5" Value="{Binding Trim.FadeOut}" FormatString="0.# s" />
+              </Grid>
+              <ctl:HintText Hint="{DynamicResource HintTrimMode}" />
+              <ctl:HintText Foreground="{DynamicResource BrushWarning}" Hint="{DynamicResource HintFastNotPossible}" IsVisible="{Binding ShowFastHint}" />
+            </StackPanel>
+          </Border>
+
+          <!-- Loop -->
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Classes="cardhead">
+                <PathIcon Data="{StaticResource IconRepeat}" />
+                <TextBlock Classes="h2" Text="{DynamicResource HdrLoop}" />
+              </StackPanel>
+              <Grid Classes="opts" ColumnDefinitions="*,240" RowDefinitions="Auto,Auto,Auto">
+                <TextBlock Text="{DynamicResource LblLoopMode}" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding LoopModes}" SelectedItem="{Binding Trim.Loop}" ItemTemplate="{StaticResource EnumLabel}" />
+                <TextBlock Grid.Row="1" Text="{DynamicResource LblLoopCountPlays}" IsVisible="{Binding ShowLoopCount}" />
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="2" Maximum="1000" Value="{Binding Trim.LoopCount}" FormatString="0 ×" IsVisible="{Binding ShowLoopCount}" />
+                <TextBlock Grid.Row="2" Text="{DynamicResource LblLoopTarget}" IsVisible="{Binding ShowLoopTarget}" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="1" Maximum="86400" Increment="10" Value="{Binding Trim.LoopTargetSeconds}" FormatString="0 s" IsVisible="{Binding ShowLoopTarget}" />
+              </Grid>
+              <ctl:HintText Hint="{DynamicResource HintBoomerang}" IsVisible="{Binding ShowBoomerangHint}" />
+            </StackPanel>
+          </Border>
+
+          <!-- Output format -->
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Classes="cardhead">
+                <PathIcon Data="{StaticResource IconConvert}" />
+                <TextBlock Classes="h2" Text="{DynamicResource HdrTrimOutput}" />
+              </StackPanel>
+              <Grid Classes="opts" ColumnDefinitions="*,240" RowDefinitions="Auto">
+                <TextBlock Text="{DynamicResource LblFormat}" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding Trim.Output}" ItemTemplate="{StaticResource EnumLabel}" />
+              </Grid>
+              <ctl:HintText Hint="{Binding ConvertHint}" IsVisible="{Binding IsConvertOutput}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <parts:OutputPanel DataContext="{Binding Output}" />
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>

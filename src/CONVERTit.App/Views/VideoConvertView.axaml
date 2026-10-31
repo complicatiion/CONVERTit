@@ -1,0 +1,9 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.VideoConvertView">
+  <parts:PageFrame>
+    <parts:VideoOptionsPanel DataContext="{Binding Video}" />
+  </parts:PageFrame>
+</UserControl>

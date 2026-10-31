@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CONVERTit.App.Views.Parts.AudioOptionsPanel">
+  <!-- DataContext: AudioOptionsViewModel -->
+  <Border Classes="card">
+    <StackPanel>
+      <StackPanel Classes="cardhead">
+        <PathIcon Data="{StaticResource IconAudio}" />
+        <TextBlock Classes="h2" Text="{DynamicResource HdrAudioFormat}" />
+      </StackPanel>
+      <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+        <TextBlock Text="{DynamicResource LblFormat}" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Formats}" SelectedItem="{Binding Options.Format}" ItemTemplate="{StaticResource EnumLabel}" />
+
+        <TextBlock Grid.Row="1" Text="{DynamicResource LblBitrateMode}" IsVisible="{Binding IsMp3}" />
+        <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Mp3Modes}" SelectedItem="{Binding Options.Mp3Mode}"
+                  ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsMp3}" />
+
+        <TextBlock Grid.Row="2" Text="{DynamicResource LblBitrate}" IsVisible="{Binding ShowBitrate}" />
+        <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Bitrates}" SelectedItem="{Binding Options.BitrateKbps}"
+                  ItemTemplate="{StaticResource KbpsLabel}" IsVisible="{Binding ShowBitrate}" />
+
+        <TextBlock Grid.Row="3" Text="{DynamicResource LblVbrLevel}" IsVisible="{Binding IsMp3Vbr}" />
+        <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding VbrLevels}" SelectedItem="{Binding Options.Mp3VbrLevel}"
+                  ItemTemplate="{StaticResource VbrLabel}" IsVisible="{Binding IsMp3Vbr}" />
+
+        <TextBlock Grid.Row="4" Text="{DynamicResource LblVorbisQuality}" IsVisible="{Binding IsVorbis}" />
+        <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding VorbisQualities}" SelectedItem="{Binding Options.VorbisQuality}"
+                  ItemTemplate="{StaticResource VorbisLabel}" IsVisible="{Binding IsVorbis}" />
+
+        <TextBlock Grid.Row="5" Text="{DynamicResource LblFlacLevel}" IsVisible="{Binding IsFlac}" />
+        <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding FlacLevels}" SelectedItem="{Binding Options.FlacLevel}"
+                  ItemTemplate="{StaticResource FlacLabel}" IsVisible="{Binding IsFlac}" />
+
+        <TextBlock Grid.Row="6" Text="{DynamicResource LblBitDepth}" IsVisible="{Binding IsWav}" />
+        <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding WavDepths}" SelectedItem="{Binding Options.WavDepth}"
+                  ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsWav}" />
+
+        <TextBlock Grid.Row="7" Text="{DynamicResource LblSampleRate}" />
+        <ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding Options.SampleRate}" ItemTemplate="{StaticResource RateLabel}" />
+
+        <TextBlock Grid.Row="8" Text="{DynamicResource LblChannels}" />
+        <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding ChannelModes}" SelectedItem="{Binding Options.Channels}" ItemTemplate="{StaticResource EnumLabel}" />
+
+        <TextBlock Grid.Row="12" Text="{DynamicResource LblLoudness}" />
+        <ComboBox Grid.Row="12" Grid.Column="1" ItemsSource="{Binding LoudnessTargets}" SelectedItem="{Binding Options.Loudness}" ItemTemplate="{StaticResource EnumLabel}" />
+
+        <TextBlock Grid.Row="13" Text="{DynamicResource LblTrimSilence}" />
+        <ToggleSwitch Grid.Row="13" Grid.Column="1" IsChecked="{Binding Options.TrimSilence}" OnContent="" OffContent="" />
+
+        <TextBlock Grid.Row="9" Text="{DynamicResource LblNotAboveSource}" IsVisible="{Binding ShowBitrate}" />
+        <ToggleSwitch Grid.Row="9" Grid.Column="1" IsChecked="{Binding Options.NotAboveSource}" OnContent="" OffContent="" IsVisible="{Binding ShowBitrate}" />
+
+        <TextBlock Grid.Row="10" Text="{DynamicResource LblKeepMetadata}" />
+        <ToggleSwitch Grid.Row="10" Grid.Column="1" IsChecked="{Binding Options.KeepMetadata}" OnContent="" OffContent="" />
+
+        <TextBlock Grid.Row="11" Text="{DynamicResource LblKeepCover}" IsVisible="{Binding SupportsCover}" />
+        <ToggleSwitch Grid.Row="11" Grid.Column="1" IsChecked="{Binding Options.KeepCover}" OnContent="" OffContent="" IsVisible="{Binding SupportsCover}" />
+      </Grid>
+    </StackPanel>
+  </Border>
+</UserControl>

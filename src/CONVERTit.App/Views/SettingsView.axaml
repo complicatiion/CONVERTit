@@ -1,0 +1,177 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             x:Class="CONVERTit.App.Views.SettingsView">
+  <!-- DataContext: SettingsViewModel · changes apply immediately -->
+  <ScrollViewer>
+    <StackPanel Spacing="16" MaxWidth="1000" HorizontalAlignment="Left">
+
+      <!-- General -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconTranslate}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrGeneral}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto">
+            <TextBlock Text="{DynamicResource LblLanguage}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Image Width="22" Height="15" Source="{Binding Flag}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblRememberSettings}" />
+            <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding RememberSettings}" OnContent="" OffContent="" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Appearance -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconPalette}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrAppearance}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblTheme}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblDisplayProfile}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding DisplayProfiles}" SelectedItem="{Binding DisplayProfile}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblSidebarAccordion}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding SidebarAccordion}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblStartMaximized}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding StartMaximized}" OnContent="" OffContent="" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Modules: FFmpeg -->
+      <Border Classes="card" DataContext="{Binding Modules}">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <PathIcon Data="{StaticResource IconPuzzle}" Width="18" Height="18" Foreground="{DynamicResource BrushAccentIcon}" Margin="0,0,10,0" />
+            <TextBlock Grid.Column="1" Classes="h2" Text="{DynamicResource HdrModules}" />
+            <Border Grid.Column="2" Classes="pill ok" IsVisible="{Binding FfmpegReady}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" />
+                <TextBlock Classes="small" Text="{DynamicResource StateInstalled}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="pill warn" IsVisible="{Binding FfmpegMissing}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource IconAlert}" Width="14" Height="14" />
+                <TextBlock Classes="small" Text="{DynamicResource StateMissing}" />
+              </StackPanel>
+            </Border>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="muted" Text="FFmpeg / ffprobe:" VerticalAlignment="Center" Margin="0,0,12,8" />
+            <Border Grid.Column="1" Classes="pill neutral" HorizontalAlignment="Left" Margin="0,0,0,8">
+              <TextBlock Classes="small" Text="{Binding StatusDisplay}" />
+            </Border>
+            <TextBlock Grid.Row="1" Classes="muted" Text="{DynamicResource LblPathColon}" VerticalAlignment="Center" Margin="0,0,12,0" />
+            <Border Grid.Row="1" Grid.Column="1" Classes="pill neutral" HorizontalAlignment="Left">
+              <SelectableTextBlock Classes="mono small" Text="{Binding FfmpegPath}" TextWrapping="Wrap" />
+            </Border>
+          </Grid>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" IsVisible="{Binding IsBusy}" />
+          <WrapPanel HorizontalAlignment="Center">
+            <Button Margin="4,0,4,8" Command="{Binding ChooseFolderCommand}" IsEnabled="{Binding !IsBusy}">
+              <ctl:IconLabel Icon="{StaticResource IconFolderSearch}" Text="{DynamicResource BtnChooseFfmpegFolder}" />
+            </Button>
+            <Button Margin="4,0,4,8" Command="{Binding OpenFolderCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFolder}" />
+            </Button>
+            <Button Margin="4,0,4,8" Classes="primary" Command="{Binding DownloadCommand}" IsEnabled="{Binding !IsBusy}">
+              <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadInstall}" />
+            </Button>
+          </WrapPanel>
+          <ctl:HintText Hint="{DynamicResource HintModules}" HorizontalAlignment="Center" TextAlignment="Center" />
+        </StackPanel>
+      </Border>
+
+      <!-- Performance -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconSpeed}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrPerformance}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblMediaParallel}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding MediaParallelChoices}" SelectedItem="{Binding MediaParallel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblImageParallel}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ImageParallelChoices}" SelectedItem="{Binding ImageParallel}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblPriority}" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Priorities}" SelectedItem="{Binding Priority}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblUseHardware}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding UseHardwareEncoders}" OnContent="" OffContent="" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Windows integration -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconBell}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrWindows}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblPreventSleep}" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding PreventSleep}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblTaskbarProgress}" />
+            <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding TaskbarProgress}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblSystemNotifications}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding SystemNotifications}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblInAppNotifications}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding InAppNotifications}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblOpenFolderWhenDone}" />
+            <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding OpenFolderWhenDone}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblExplorerMenu}" IsVisible="{Binding IsWindows}" />
+            <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding ExplorerMenu}" OnContent="" OffContent="" IsVisible="{Binding IsWindows}" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <Button Command="{Binding RemoveWindowsIntegrationCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconDelete}" Text="{DynamicResource BtnRemoveIntegration}" />
+            </Button>
+            <Button Command="{Binding TestNotificationCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconBell}" Text="{DynamicResource BtnTestNotification}" />
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Data -->
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconDatabase}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrData}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Classes="muted" Text="{DynamicResource LblDataFolderColon}" VerticalAlignment="Center" />
+            <Border Classes="pill neutral">
+              <SelectableTextBlock Classes="mono small" Text="{Binding DataFolder}" TextWrapping="Wrap" />
+            </Border>
+          </StackPanel>
+          <ctl:HintText Hint="{DynamicResource HintPortable}" IsVisible="{Binding IsPortable}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Command="{Binding ResetPageSettingsCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconUndo}" Text="{DynamicResource BtnResetPages}" />
+            </Button>
+            <Button Command="{Binding OpenDataFolderCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFolder}" />
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

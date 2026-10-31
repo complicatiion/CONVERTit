@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             x:Class="CONVERTit.App.Views.Parts.OutputPanel">
+  <!-- DataContext: OutputViewModel -->
+  <StackPanel>
+    <StackPanel Classes="cardhead">
+      <PathIcon Data="{StaticResource IconFolder}" />
+      <TextBlock Classes="h2" Text="{DynamicResource HdrOutput}" />
+    </StackPanel>
+    <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+      <TextBlock Text="{DynamicResource LblDestination}" />
+      <ComboBox Grid.Column="1" ItemsSource="{Binding Destinations}" SelectedItem="{Binding Options.Destination}" ItemTemplate="{StaticResource EnumLabel}" />
+
+      <TextBlock Grid.Row="1" Text="{DynamicResource LblSubfolder}" IsVisible="{Binding IsSubfolder}" />
+      <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Options.SubfolderName}" IsVisible="{Binding IsSubfolder}" />
+
+      <TextBlock Grid.Row="2" Text="{DynamicResource LblFolder}" IsVisible="{Binding IsCustom}" />
+      <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto" IsVisible="{Binding IsCustom}">
+        <TextBox Text="{Binding Options.CustomFolder}" Watermark="{DynamicResource WatermarkFolder}" />
+        <Button Grid.Column="1" Classes="icon" Margin="6,0,0,0" Command="{Binding BrowseCommand}" ToolTip.Tip="{DynamicResource BtnBrowse}">
+          <PathIcon Data="{StaticResource IconFolderOpen}" />
+        </Button>
+      </Grid>
+
+      <TextBlock Grid.Row="3" Text="{DynamicResource LblSuffix}" />
+      <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Options.Suffix}" Watermark="_web" />
+
+      <TextBlock Grid.Row="4" Text="{DynamicResource LblConflict}" />
+      <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding Conflicts}" SelectedItem="{Binding Options.Conflict}" ItemTemplate="{StaticResource EnumLabel}" />
+
+      <TextBlock Grid.Row="5" Text="{DynamicResource LblMirror}" />
+      <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding Options.MirrorStructure}" OnContent="" OffContent="" />
+
+      <TextBlock Grid.Row="6" Text="{DynamicResource LblPreserveDates}" />
+      <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Options.PreserveDates}" OnContent="" OffContent="" />
+    </Grid>
+  </StackPanel>
+</UserControl>

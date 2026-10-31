@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.ImageConvertView">
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <parts:ImageOptionsPanel DataContext="{Binding Image}" />
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

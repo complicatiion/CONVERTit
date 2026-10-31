@@ -1,0 +1,181 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.TagEditorView">
+  <!-- DataContext: TagEditorViewModel · tags are written directly into the files -->
+  <DockPanel>
+    <!-- Footer: note left, main action right -->
+    <Border DockPanel.Dock="Bottom" Padding="0,14,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <ctl:HintText Hint="{DynamicResource HintTagsInPlace}" VerticalAlignment="Center" Margin="0,0,16,0" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Classes="fixed" Command="{Binding RevertCommand}">
+            <ctl:IconLabel Icon="{StaticResource IconUndo}" Text="{DynamicResource BtnRevert}" />
+          </Button>
+          <Button Classes="primary fixed" Command="{Binding SaveCommand}">
+            <ctl:IconLabel Icon="{StaticResource IconContentSave}" Text="{DynamicResource BtnSaveTags}" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid ColumnDefinitions="5*,18,6*">
+      <!-- Files -->
+      <Border Classes="card">
+        <parts:SourcePanel DataContext="{Binding Sources}" />
+      </Border>
+
+      <ScrollViewer Grid.Column="2" Padding="0,0,10,0">
+        <StackPanel Spacing="16">
+
+          <!-- Tag fields -->
+          <Border Classes="card">
+            <StackPanel>
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
+                <PathIcon Data="{StaticResource IconTagMultiple}" Width="18" Height="18" Foreground="{DynamicResource BrushAccentIcon}" Margin="0,0,10,0" />
+                <TextBlock Grid.Column="1" Classes="h2" Text="{Binding TargetText}" TextTrimming="CharacterEllipsis" />
+                <Border Grid.Column="2" Classes="pill neutral" IsVisible="{Binding TagTypesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Classes="small" Text="{Binding TagTypesText}" />
+                </Border>
+              </Grid>
+              <Grid ColumnDefinitions="*,0,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsEnabled="{Binding HasTargets}">
+                <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4" Margin="0,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding TitleField.Label}" />
+                  <TextBox Text="{Binding TitleField.Value}" Watermark="{Binding TitleField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" Margin="0,0,8,12">
+                  <TextBlock Classes="label" Text="{Binding ArtistField.Label}" />
+                  <TextBox Text="{Binding ArtistField.Value}" Watermark="{Binding ArtistField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4" Margin="8,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding AlbumArtistField.Label}" />
+                  <TextBox Text="{Binding AlbumArtistField.Value}" Watermark="{Binding AlbumArtistField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4" Margin="0,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding AlbumField.Label}" />
+                  <TextBox Text="{Binding AlbumField.Value}" Watermark="{Binding AlbumField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="0" Spacing="4" Margin="0,0,8,12">
+                  <TextBlock Classes="label" Text="{Binding YearField.Label}" />
+                  <TextBox Text="{Binding YearField.Value}" Watermark="{Binding YearField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4" Margin="8,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding GenreField.Label}" />
+                  <TextBox Text="{Binding GenreField.Value}" Watermark="{Binding GenreField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="4" Grid.Column="0" Spacing="4" Margin="0,0,8,12">
+                  <TextBlock Classes="label" Text="{Binding TrackField.Label}" />
+                  <TextBox Text="{Binding TrackField.Value}" Watermark="{Binding TrackField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="4" Grid.Column="2" Spacing="4" Margin="8,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding TrackCountField.Label}" />
+                  <TextBox Text="{Binding TrackCountField.Value}" Watermark="{Binding TrackCountField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="5" Grid.Column="0" Spacing="4" Margin="0,0,8,12">
+                  <TextBlock Classes="label" Text="{Binding DiscField.Label}" />
+                  <TextBox Text="{Binding DiscField.Value}" Watermark="{Binding DiscField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="5" Grid.Column="2" Spacing="4" Margin="8,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding DiscCountField.Label}" />
+                  <TextBox Text="{Binding DiscCountField.Value}" Watermark="{Binding DiscCountField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4" Margin="0,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding ComposerField.Label}" />
+                  <TextBox Text="{Binding ComposerField.Value}" Watermark="{Binding ComposerField.Watermark}" />
+                </StackPanel>
+                <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4" Margin="0,0,0,12">
+                  <TextBlock Classes="label" Text="{Binding CommentField.Label}" />
+                  <TextBox Text="{Binding CommentField.Value}" Watermark="{Binding CommentField.Watermark}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" />
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Cover -->
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Classes="cardhead">
+                <PathIcon Data="{StaticResource IconImage}" />
+                <TextBlock Classes="h2" Text="{DynamicResource HdrCover}" />
+              </StackPanel>
+              <Grid ColumnDefinitions="Auto,*">
+                <Border Width="168" Height="168" CornerRadius="12" ClipToBounds="True" Background="{DynamicResource BrushSurfaceRaised}" Margin="0,0,18,0">
+                  <Panel>
+                    <Image Source="{Binding CoverImage}" Stretch="Uniform" />
+                    <PathIcon Data="{StaticResource IconMusicBox}" Width="56" Height="56" Foreground="{DynamicResource BrushTextDisabled}"
+                              IsVisible="{Binding !HasCover}" HorizontalAlignment="Center" />
+                  </Panel>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Classes="muted" Text="{Binding CoverInfo}" TextWrapping="Wrap" />
+                  <WrapPanel>
+                    <Button Margin="0,0,8,8" Command="{Binding ChooseCoverCommand}">
+                      <ctl:IconLabel Icon="{StaticResource IconImagePlus}" Text="{DynamicResource BtnChooseCover}" />
+                    </Button>
+                    <Button Margin="0,0,8,8" Command="{Binding ExportCoverCommand}" IsVisible="{Binding HasCover}">
+                      <ctl:IconLabel Icon="{StaticResource IconExport}" Text="{DynamicResource BtnExportCover}" />
+                    </Button>
+                    <Button Margin="0,0,8,8" Classes="danger" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}">
+                      <ctl:IconLabel Icon="{StaticResource IconImageRemove}" Text="{DynamicResource BtnRemoveCover}" />
+                    </Button>
+                  </WrapPanel>
+                  <ctl:HintText Hint="{DynamicResource HintCoverDrop}" />
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Options -->
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Classes="cardhead">
+                <PathIcon Data="{StaticResource IconCog}" />
+                <TextBlock Classes="h2" Text="{DynamicResource HdrTagOptions}" />
+              </StackPanel>
+              <Grid Classes="opts" ColumnDefinitions="*,240" RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Text="{DynamicResource LblId3Version}" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Id3Versions}" SelectedItem="{Binding Id3Version}" ItemTemplate="{StaticResource EnumLabel}" />
+                <TextBlock Grid.Row="1" Text="{DynamicResource LblWriteId3v1}" />
+                <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding WriteId3v1}" OnContent="" OffContent="" />
+                <TextBlock Grid.Row="2" Text="{DynamicResource LblKeepFileDate}" />
+                <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding KeepFileDate}" OnContent="" OffContent="" />
+                <TextBlock Grid.Row="3" Text="{DynamicResource LblResizeCover}" />
+                <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding ResizeCover}" OnContent="" OffContent="" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Tools -->
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <StackPanel Classes="cardhead" Margin="0,0,0,2">
+                <PathIcon Data="{StaticResource IconTune}" />
+                <TextBlock Classes="h2" Text="{DynamicResource HdrTagTools}" />
+              </StackPanel>
+              <StackPanel Spacing="4">
+                <TextBlock Classes="label" Text="{DynamicResource LblNamePattern}" />
+                <TextBox Classes="mono" Text="{Binding Pattern}" Watermark="%track% - %artist% - %title%" />
+              </StackPanel>
+              <WrapPanel>
+                <Button Margin="0,0,8,8" Command="{Binding TagsFromNamesCommand}">
+                  <ctl:IconLabel Icon="{StaticResource IconFileImport}" Text="{DynamicResource BtnTagsFromNames}" />
+                </Button>
+                <Button Margin="0,0,8,8" Command="{Binding RenameFromTagsCommand}">
+                  <ctl:IconLabel Icon="{StaticResource IconRename}" Text="{DynamicResource BtnRenameFromTags}" />
+                </Button>
+                <Button Margin="0,0,8,8" Command="{Binding NumberTracksCommand}">
+                  <ctl:IconLabel Icon="{StaticResource IconNumeric}" Text="{DynamicResource BtnNumberTracks}" />
+                </Button>
+                <Button Margin="0,0,8,8" Command="{Binding TitleCaseCommand}">
+                  <ctl:IconLabel Icon="{StaticResource IconFormatLetterCase}" Text="{DynamicResource BtnTitleCase}" />
+                </Button>
+              </WrapPanel>
+              <ctl:HintText Hint="{DynamicResource HintTagPattern}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>
