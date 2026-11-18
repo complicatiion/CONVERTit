@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.InterpolateView">
+  <!-- DataContext: InterpolateViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <Border Classes="banner" IsVisible="{Binding ModuleMissing}">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+          <PathIcon Data="{StaticResource IconPuzzle}" Width="20" Height="20" Foreground="{DynamicResource BrushWarning}" Margin="0,0,12,0" />
+          <TextBlock Grid.Column="1" Text="{Binding ModuleMissingText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="2" Classes="primary" Command="{Binding InstallModuleCommand}" Margin="12,0,0,0">
+            <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadInstall}" />
+          </Button>
+          <Button Grid.Column="3" Command="{Binding OpenDependenciesCommand}" Margin="8,0,0,0">
+            <ctl:IconLabel Icon="{StaticResource IconPackage}" Text="{DynamicResource BtnOpenModules}" />
+          </Button>
+        </Grid>
+      </Border>
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconFps}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrInterpolate}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblMethod}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Engines}" SelectedItem="{Binding Interpolate.Engine}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblFrameFactor}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Factors}" SelectedItem="{Binding Interpolate.Factor}" ItemTemplate="{StaticResource FactorLabel}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblSlowMotion}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding Interpolate.SlowMotion}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblVideoCrf}" />
+            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,50">
+              <Slider Minimum="12" Maximum="30" Value="{Binding Interpolate.VideoCrf}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Interpolate.VideoCrf}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+          </Grid>
+          <TextBlock Classes="small accent" Text="{Binding ResultText}" Margin="0,0,0,4" />
+          <ctl:HintText Hint="{DynamicResource HintInterpolate}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

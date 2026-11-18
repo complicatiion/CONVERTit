@@ -52,7 +52,7 @@
               <TextBlock Classes="small muted" Text="{Binding Sources.SelectedItem.Summary}" TextTrimming="CharacterEllipsis" />
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" IsVisible="{Binding HasSource}">
-              <Button Classes="icon" Command="{Binding UnloadCommand}" ToolTip.Tip="{DynamicResource TipUnload}">
+              <Button Classes="icon close" Command="{Binding UnloadCommand}" ToolTip.Tip="{DynamicResource TipUnload}">
                 <PathIcon Data="{StaticResource IconClose}" />
               </Button>
               <Button Classes="icon" Command="{Binding Sources.ShowInExplorerCommand}" ToolTip.Tip="{DynamicResource TipShowInExplorer}">
@@ -75,24 +75,44 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <ctl:RangeBar Maximum="{Binding Duration}" Start="{Binding Trim.Start}" End="{Binding Trim.End}" Position="{Binding Position, Mode=TwoWay}"
-                          TrackBrush="{DynamicResource BrushSurfaceRaised}" RangeBrush="{DynamicResource BrushAccent}" MarkerBrush="{DynamicResource BrushTextPrimary}" />
+            <!-- Timeline: drag start/end handles; with cuts: segments (red = removed), drag cut lines, right-click menu -->
+            <ctl:RangeBar x:Name="Timeline" Maximum="{Binding Duration}" Start="{Binding Trim.Start}" End="{Binding Trim.End}" Position="{Binding Position, Mode=TwoWay}"
+                          Segments="{Binding Segments}" SegmentsVersion="{Binding SegmentsVersion}" SelectedSegment="{Binding SelectedSegment, Mode=TwoWay}"
+                          TrackBrush="{DynamicResource BrushSurfaceRaised}" RangeBrush="{DynamicResource BrushAccent}"
+                          RemovedBrush="{DynamicResource BrushDanger}" MarkerBrush="{DynamicResource BrushTextPrimary}"
+                          OutlineBrush="{DynamicResource BrushSurfaceCard}" />
+
+            <!-- Multi-cut: cut, remove/restore the selected segment, keep only it, clear all cuts -->
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button Classes="mark" Command="{Binding CutHereCommand}" ToolTip.Tip="{DynamicResource TipCutHere}">
+                  <ctl:IconLabel Icon="{StaticResource IconTrim}" Text="{DynamicResource BtnCutHere}" />
+                </Button>
+                <Button Classes="icon close" Command="{Binding ToggleSegmentCommand}" IsVisible="{Binding HasSelectedSegment}"
+                        ToolTip.Tip="{DynamicResource TipRemoveSegment}">
+                  <Panel>
+                    <PathIcon Data="{StaticResource IconDelete}" IsVisible="{Binding !SelectedSegmentRemoved}" />
+                    <PathIcon Data="{StaticResource IconUndo}" IsVisible="{Binding SelectedSegmentRemoved}" />
+                  </Panel>
+                </Button>
+                <Button Classes="icon" Command="{Binding KeepOnlySegmentCommand}" IsVisible="{Binding HasSelectedSegment}"
+                        ToolTip.Tip="{DynamicResource TipKeepOnlySegment}">
+                  <PathIcon Data="{StaticResource IconCrop}" />
+                </Button>
+              </StackPanel>
+              <TextBlock Grid.Column="1" Classes="small muted" Text="{Binding CutsText}" VerticalAlignment="Center" Margin="12,0" TextTrimming="CharacterEllipsis" />
+              <Button Grid.Column="2" Classes="rangebtn" Command="{Binding ClearCutsCommand}" IsVisible="{Binding HasCuts}">
+                <ctl:IconLabel Icon="{StaticResource IconBroom}" Text="{DynamicResource BtnClearCuts}" />
+              </Button>
+            </Grid>
 
             <Grid ColumnDefinitions="Auto,*,Auto">
               <TextBlock Classes="mono small" Text="{Binding PositionText}" />
               <TextBlock Grid.Column="2" Classes="mono small muted" Text="{Binding DurationText}" />
             </Grid>
 
+            <!-- Transport centered; right: unfold start/end and "Play range" -->
             <Grid ColumnDefinitions="*,Auto,*">
-              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <!-- Mark start / end: icon buttons (|→ and →|), text in the tooltip -->
-                <Button Classes="mark" Command="{Binding SetStartCommand}" ToolTip.Tip="{DynamicResource TipSetStart}">
-                  <ctl:IconLabel Icon="{StaticResource IconArrowRightBold}" Text="{DynamicResource BtnSetStart}" />
-                </Button>
-                <Button Classes="mark" Command="{Binding SetEndCommand}" ToolTip.Tip="{DynamicResource TipSetEnd}">
-                  <ctl:IconLabel Icon="{StaticResource IconArrowLeftBold}" Text="{DynamicResource BtnSetEnd}" />
-                </Button>
-              </StackPanel>
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                 <Button Classes="icon" Command="{Binding GoToStartCommand}" ToolTip.Tip="{DynamicResource TipGoStart}">
                   <PathIcon Data="{StaticResource IconStepBack}" />
@@ -113,25 +133,53 @@
                   <PathIcon Data="{StaticResource IconStepForward}" />
                 </Button>
               </StackPanel>
-              <Button Grid.Column="2" HorizontalAlignment="Right" Command="{Binding PreviewRangeCommand}" IsEnabled="{Binding HasPlayer}">
-                <ctl:IconLabel Icon="{StaticResource IconPlayCircle}" Text="{DynamicResource BtnPreviewRange}" />
-              </Button>
+              <ToggleButton Grid.Column="2" Classes="fold" HorizontalAlignment="Right" IsChecked="{Binding ShowRangeOptions}"
+                            ToolTip.Tip="{DynamicResource TipRangeOptions}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="{DynamicResource BtnRangeOptions}" VerticalAlignment="Center" />
+                  <PathIcon Classes="chevron fold" Classes.expanded="{Binding ShowRangeOptions}" Data="{StaticResource IconChevronDown}" />
+                </StackPanel>
+              </ToggleButton>
             </Grid>
 
-            <!-- Exact times -->
-            <Grid ColumnDefinitions="Auto,160,24,Auto,160,*" Margin="0,4,0,0">
-              <TextBlock Classes="muted" Text="{DynamicResource LblStart}" VerticalAlignment="Center" Margin="0,0,10,0" />
-              <TextBox Grid.Column="1" Classes="mono" Text="{Binding StartText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Watermark="00:00.000" />
-              <TextBlock Grid.Column="3" Classes="muted" Text="{DynamicResource LblEnd}" VerticalAlignment="Center" Margin="0,0,10,0" />
-              <TextBox Grid.Column="4" Classes="mono" Text="{Binding EndText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Watermark="{DynamicResource WatermarkEnd}" />
-            </Grid>
+            <!-- Range: set start/end at the playhead, exact times, play the range – all controls equally wide -->
+            <Border Classes="inset" IsVisible="{Binding ShowRangeOptions}">
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto,Auto">
+                <Button Classes="mark rangebtn" Command="{Binding SetStartCommand}" ToolTip.Tip="{DynamicResource TipSetStart}" Margin="0,0,8,8">
+                  <ctl:IconLabel Icon="{StaticResource IconArrowRightBold}" Text="{DynamicResource BtnSetStart}" />
+                </Button>
+                <TextBox Grid.Column="1" Classes="mono rangebox" Text="{Binding StartText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Watermark="00:00.000"
+                         ToolTip.Tip="{DynamicResource LblStart}" Margin="0,0,0,8" />
+                <Button Grid.Row="1" Classes="mark rangebtn" Command="{Binding SetEndCommand}" ToolTip.Tip="{DynamicResource TipSetEnd}" Margin="0,0,8,0">
+                  <ctl:IconLabel Icon="{StaticResource IconArrowLeftBold}" Text="{DynamicResource BtnSetEnd}" />
+                </Button>
+                <TextBox Grid.Row="1" Grid.Column="1" Classes="mono rangebox" Text="{Binding EndText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                         Watermark="{DynamicResource WatermarkEnd}" ToolTip.Tip="{DynamicResource LblEnd}" />
+                <Button Grid.Column="3" Grid.RowSpan="2" Classes="rangebtn" VerticalAlignment="Center" Command="{Binding PreviewRangeCommand}" IsEnabled="{Binding HasPlayer}">
+                  <ctl:IconLabel Icon="{StaticResource IconPlayCircle}" Text="{DynamicResource BtnPreviewRange}" />
+                </Button>
+              </Grid>
+            </Border>
             <ctl:HintText Hint="{DynamicResource HintTrimKeys}" />
           </StackPanel>
 
           <!-- Picture / audio area -->
           <Border CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BrushSurfaceRaised}" MinHeight="220">
             <Panel>
-              <vlc:VideoView x:Name="Video" IsVisible="{Binding ShowVideoSurface}" />
+              <!-- Sized to the picture: around it the card background shows instead of black bars.
+                   Click on the video = play/pause (overlay content of the VideoView receives the pointer). -->
+              <ctl:AspectPanel AspectRatio="{Binding VideoAspect}" IsVisible="{Binding ShowVideoSurface}">
+                <vlc:VideoView x:Name="Video">
+                  <Panel x:Name="VideoClickLayer" Background="#01000000" Cursor="Hand">
+                    <Border Classes="clickindicator" Classes.show="{Binding ShowClickIndicator}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <Panel>
+                        <PathIcon Data="{StaticResource IconPlay}" Width="34" Height="34" IsVisible="{Binding IsPlaying}" />
+                        <PathIcon Data="{StaticResource IconPause}" Width="34" Height="34" IsVisible="{Binding !IsPlaying}" />
+                      </Panel>
+                    </Border>
+                  </Panel>
+                </vlc:VideoView>
+              </ctl:AspectPanel>
               <Image Source="{Binding Frame}" Stretch="Uniform" IsVisible="{Binding ShowStillFrame}" />
               <!-- Audio: position only (with an open file) -->
               <TextBlock Classes="mono" FontSize="22" Foreground="{DynamicResource BrushTextPrimary}" Text="{Binding PositionText}" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -178,7 +226,7 @@
                 <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="60" Increment="0.5" Value="{Binding Trim.FadeOut}" FormatString="0.# s" />
               </Grid>
               <ctl:HintText Hint="{DynamicResource HintTrimMode}" />
-              <ctl:HintText Foreground="{DynamicResource BrushWarning}" Hint="{DynamicResource HintFastNotPossible}" IsVisible="{Binding ShowFastHint}" />
+              <ctl:HintText Classes="keep" Foreground="{DynamicResource BrushWarning}" Hint="{DynamicResource HintFastNotPossible}" IsVisible="{Binding ShowFastHint}" />
             </StackPanel>
           </Border>
 
@@ -208,11 +256,22 @@
                 <PathIcon Data="{StaticResource IconConvert}" />
                 <TextBlock Classes="h2" Text="{DynamicResource HdrTrimOutput}" />
               </StackPanel>
-              <Grid Classes="opts" ColumnDefinitions="*,240" RowDefinitions="Auto">
+              <Grid Classes="opts" ColumnDefinitions="*,240" RowDefinitions="Auto,Auto,Auto,Auto">
                 <TextBlock Text="{DynamicResource LblFormat}" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding Trim.Output}" ItemTemplate="{StaticResource EnumLabel}" />
+                <!-- GIF / animated WebP: width and frame rate decide the size -->
+                <TextBlock Grid.Row="1" Text="{DynamicResource LblWidth}" IsVisible="{Binding IsAnimationOutput}" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AnimationWidths}" SelectedItem="{Binding Trim.AnimationWidth}"
+                          ItemTemplate="{StaticResource WidthLabel}" IsVisible="{Binding IsAnimationOutput}" />
+                <TextBlock Grid.Row="2" Text="{DynamicResource LblFps}" IsVisible="{Binding IsAnimationOutput}" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding AnimationRates}" SelectedItem="{Binding Trim.AnimationFps}" IsVisible="{Binding IsAnimationOutput}" />
+                <!-- Multi-cut: one joined file or one file per kept segment -->
+                <TextBlock Grid.Row="3" Text="{DynamicResource LblSegmentsSeparate}" IsVisible="{Binding HasCuts}" />
+                <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding Trim.SegmentsSeparate}" OnContent="" OffContent="" IsVisible="{Binding HasCuts}" />
               </Grid>
+              <TextBlock Classes="small accent" Text="{Binding AnimationEstimate}" IsVisible="{Binding IsAnimationOutput}" TextWrapping="Wrap" Margin="0,0,0,6" />
               <ctl:HintText Hint="{Binding ConvertHint}" IsVisible="{Binding IsConvertOutput}" />
+              <ctl:HintText Hint="{DynamicResource HintAnimationOutput}" IsVisible="{Binding IsAnimationOutput}" />
             </StackPanel>
           </Border>
 

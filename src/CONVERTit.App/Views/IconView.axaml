@@ -11,7 +11,12 @@
             <PathIcon Data="{StaticResource IconIcon}" />
             <TextBlock Classes="h2" Text="{DynamicResource HdrIconSizes}" />
           </StackPanel>
-          <WrapPanel Margin="0,0,0,12">
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto">
+            <TextBlock Text="{DynamicResource LblIconExport}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Exports}" SelectedItem="{Binding IconSettings.Export}" ItemTemplate="{StaticResource EnumLabel}" />
+          </Grid>
+          <!-- Sizes: multiple choice, therefore checkboxes (ICO and PNG set) -->
+          <WrapPanel Margin="0,0,0,12" IsVisible="{Binding ShowSizes}">
             <CheckBox Content="16 px" IsChecked="{Binding IconSettings.Size16}" Margin="0,0,16,6" />
             <CheckBox Content="24 px" IsChecked="{Binding IconSettings.Size24}" Margin="0,0,16,6" />
             <CheckBox Content="32 px" IsChecked="{Binding IconSettings.Size32}" Margin="0,0,16,6" />
@@ -20,6 +25,7 @@
             <CheckBox Content="128 px" IsChecked="{Binding IconSettings.Size128}" Margin="0,0,16,6" />
             <CheckBox Content="256 px" IsChecked="{Binding IconSettings.Size256}" Margin="0,0,16,6" />
           </WrapPanel>
+          <ctl:HintText Hint="{Binding ExportHint}" Margin="0,0,0,10" />
           <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto">
             <TextBlock Text="{DynamicResource LblIconFit}" />
             <ComboBox Grid.Column="1" ItemsSource="{Binding Fits}" SelectedItem="{Binding IconSettings.Fit}" ItemTemplate="{StaticResource EnumLabel}" />

@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.DenoiseView">
+  <!-- DataContext: DenoiseViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconVideo}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrDenoiseVideo}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblFilter}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding VideoModes}" SelectedItem="{Binding Denoise.Video}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblStrength}" IsVisible="{Binding VideoOn}" />
+            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,50" IsVisible="{Binding VideoOn}">
+              <Slider Minimum="1" Maximum="10" Value="{Binding Denoise.VideoStrength}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Denoise.VideoStrength}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblVideoCrf}" IsVisible="{Binding VideoOn}" />
+            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,50" IsVisible="{Binding VideoOn}">
+              <Slider Minimum="12" Maximum="30" Value="{Binding Denoise.VideoCrf}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Denoise.VideoCrf}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintDenoiseVideo}" />
+          <ctl:HintText Hint="{DynamicResource HintDenoiseGpu}" IsVisible="{Binding GpuHint}" />
+        </StackPanel>
+      </Border>
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconWaveform}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrDenoiseAudio}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto">
+            <TextBlock Text="{DynamicResource LblFilter}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding AudioModes}" SelectedItem="{Binding Denoise.Audio}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblStrength}" IsVisible="{Binding AudioOn}" />
+            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,50" IsVisible="{Binding AudioOn}">
+              <Slider Minimum="1" Maximum="10" Value="{Binding Denoise.AudioStrength}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Denoise.AudioStrength}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintDenoiseAudio}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

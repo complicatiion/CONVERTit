@@ -39,8 +39,12 @@
                       ToolTip.Tip="{DynamicResource TipAddSelected}">
                 <ctl:IconLabel Icon="{StaticResource IconPlaylistPlus}" Text="{Binding Sources.AddSelectedText}" />
               </Button>
-              <Button Classes="primary fixed" Command="{Binding StartCommand}">
-                <ctl:IconLabel Icon="{StaticResource IconPlay}" Text="{DynamicResource BtnAddToQueue}" />
+              <!-- Quick Convert: "Add to queue" becomes a normal button, "Convert" is the main action on the right -->
+              <Button Classes="fixed" Classes.primary="{Binding !ShowConvertNow}" Command="{Binding StartCommand}">
+                <ctl:IconLabel Icon="{StaticResource IconPlaylistPlus}" Text="{DynamicResource BtnAddToQueue}" />
+              </Button>
+              <Button Classes="primary fixed" Command="{Binding ConvertNowCommand}" IsVisible="{Binding ShowConvertNow}">
+                <ctl:IconLabel Icon="{StaticResource IconPlay}" Text="{DynamicResource BtnConvertNow}" />
               </Button>
             </StackPanel>
           </Grid>

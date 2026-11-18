@@ -9,6 +9,7 @@ using CONVERTit.App.Services;
 using CONVERTit.Core.Catalog;
 using CONVERTit.Core.Ffmpeg;
 using CONVERTit.Core.Files;
+using CONVERTit.Core.Jobs;
 using CONVERTit.Core.Media;
 using CONVERTit.Core.Options;
 using CONVERTit.Core.Storage;
@@ -65,6 +66,64 @@ public sealed partial class SourceItem : ObservableObject
     partial void OnInfoChanged(MediaInfo? value) => OnPropertyChanged(nameof(Duration));
 
     public SourceRef ToRef() => new(Path, Root);
+
+    /// <summary>Preview in the list row (Windows thumbnail or own cache); the type icon stays as fallback.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasThumbnail))]
+    private Bitmap? _thumbnail;
+
+    public bool HasThumbnail => Thumbnail is not null;
+
+    internal bool ThumbnailRequested { get; set; }
+
+    // ---------------------------------------------------------------- "Convert" right on the page (Quick Convert)
+
+    /// <summary>Job started with "Convert" for this row: progress and result are shown in the row.</summary>
+    public ConversionJob? Job { get; private set; }
+
+    public bool HasJob => Job is not null;
+
+    public bool JobActive => Job?.IsActive == true;
+
+    public bool JobDone => Job?.State == JobState.Done;
+
+    public bool JobFailed => Job?.State is JobState.Failed or JobState.Canceled;
+
+    public double JobProgress => Job?.Progress ?? 0;
+
+    public string JobTip => Job is null ? "" : Job.State == JobState.Failed ? Job.ErrorText : Job.OutputName;
+
+    public void Track(ConversionJob job)
+    {
+        if (Job is { } old)
+        {
+            old.PropertyChanged -= OnJobChanged;
+        }
+
+        Job = job;
+        job.PropertyChanged += OnJobChanged;
+        RaiseJob();
+    }
+
+    private void OnJobChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ConversionJob.State) or nameof(ConversionJob.Progress) or nameof(ConversionJob.OutputPath))
+        {
+            RaiseJob();
+        }
+    }
+
+    private void RaiseJob()
+    {
+        foreach (var name in new[] { nameof(Job), nameof(HasJob), nameof(JobActive), nameof(JobDone), nameof(JobFailed), nameof(JobProgress), nameof(JobTip) })
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
+    /// <summary>Done: show the result in Explorer.</summary>
+    [RelayCommand]
+    private void ShowResult() => AppEnvironment.ShowInExplorer(Job?.OutputPath);
 
     // ---------------------------------------------------------------- Mini player (audio lists)
 
@@ -366,6 +425,61 @@ public sealed partial class SourceListViewModel : ObservableObject
     [RelayCommand]
     private void ToggleFolderOptions() => ShowFolderOptions = !ShowFolderOptions;
 
+    // ---------------------------------------------------------------- Right-click menu of the rows
+
+    /// <summary>Page that owns this list ("Convert only these", "Send to" skips the own page).</summary>
+    public PageViewModel? Owner { get; set; }
+
+    /// <summary>Set by the view: puts text on the clipboard.</summary>
+    public Func<string, Task>? CopyToClipboard { get; set; }
+
+    /// <summary>Entries of the right-click menu for the selected rows (null = separator).</summary>
+    public IReadOnlyList<ListAction?> ContextActions(IReadOnlyList<SourceItem> items)
+    {
+        var list = new List<ListAction?>();
+        if (items.Count == 0)
+        {
+            return list;
+        }
+
+        var first = items[0];
+        if (items.Count == 1)
+        {
+            list.Add(new ListAction(Loc.T("CtxOpen"), "IconPlay", () => AppEnvironment.OpenFile(first.Path)));
+            list.Add(new ListAction(Loc.T("CtxShowInFolder"), "IconFolderOpen", () => AppEnvironment.ShowInExplorer(first.Path)));
+        }
+
+        list.Add(new ListAction(Loc.T(items.Count == 1 ? "CtxCopyPath" : "CtxCopyPaths"), "IconContentCopy",
+            () => _ = CopyToClipboard?.Invoke(string.Join(Environment.NewLine, items.Select(i => i.Path)))));
+
+        if (Owner is ConvertPageViewModel page)
+        {
+            list.Add(null);
+            list.Add(new ListAction(Loc.F("CtxConvertThese", items.Count), "IconPlaylistPlus", page.QueueSelection));
+        }
+
+        var targets = _main.SendTargets(items.Select(i => i.Kind).Distinct().ToList()).Where(p => !ReferenceEquals(p, Owner)).ToList();
+        if (targets.Count > 0)
+        {
+            var paths = items.Select(i => i.Path).ToList();
+            var children = targets.Select(p => (ListAction?)new ListAction(p.FullTitle, p.IconKey, () => _main.SendTo(p, paths))).ToList();
+            list.Add(new ListAction(Loc.T("CtxSendTo"), "IconShare", null, Children: children));
+        }
+
+        list.Add(null);
+        list.Add(new ListAction(Loc.T(items.Count == 1 ? "CtxRemove" : "CtxRemoveSelected"), "IconClose", () =>
+        {
+            _main.AudioPreview.StopIf(items.Contains);
+            foreach (var item in items)
+            {
+                Items.Remove(item);
+            }
+
+            SelectedItem = Items.FirstOrDefault();
+        }, Danger: true));
+        return list;
+    }
+
     [RelayCommand]
     private void ShowInExplorer(SourceItem? item) => AppEnvironment.ShowInExplorer((item ?? SelectedItem)?.Path);
 
@@ -507,6 +621,7 @@ public sealed partial class SourceListViewModel : ObservableObject
             _probing.Remove(item);
             UpdateProbeActivity();
             item.IsProbing = false;
+            RequestThumbnail(item);
             if (ReferenceEquals(item, SelectedItem))
             {
                 UpdateInfo();
@@ -656,6 +771,34 @@ public sealed partial class SourceListViewModel : ObservableObject
         OnPropertyChanged(nameof(InfoRows));
     }
 
+    /// <summary>Loads the row thumbnail once, in the background (at most two at a time).</summary>
+    private void RequestThumbnail(SourceItem item)
+    {
+        if (!_main.Settings.ListThumbnails || item.ThumbnailRequested || item.Kind == MediaKind.Unknown)
+        {
+            return;
+        }
+
+        item.ThumbnailRequested = true;
+        _ = LoadThumbnailAsync(item);
+    }
+
+    private async Task LoadThumbnailAsync(SourceItem item)
+    {
+        var bitmap = await _main.Thumbnails.GetAsync(item.Path, item.Kind, item.Duration);
+        if (bitmap is not null)
+        {
+            if (Items.Contains(item))
+            {
+                item.Thumbnail = bitmap;
+            }
+            else
+            {
+                bitmap.Dispose();
+            }
+        }
+    }
+
     private async Task LoadPreviewAsync(SourceItem? item)
     {
         _previewCts?.Cancel();
@@ -722,3 +865,6 @@ public sealed partial class SourceListViewModel : ObservableObject
         Changed?.Invoke();
     }
 }
+
+/// <summary>One entry of a right-click menu (Run null with Children = submenu).</summary>
+public sealed record ListAction(string Text, string IconKey, Action? Run, bool Danger = false, IReadOnlyList<ListAction?>? Children = null);

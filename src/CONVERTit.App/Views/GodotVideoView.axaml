@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.GodotVideoView">
+  <!-- DataContext: GodotVideoViewModel -->
+  <parts:PageFrame>
+    <Border Classes="card">
+      <StackPanel>
+        <StackPanel Classes="cardhead">
+          <PathIcon Data="{StaticResource IconGamepad}" />
+          <TextBlock Classes="h2" Text="{DynamicResource HdrGodotVideo}" />
+        </StackPanel>
+        <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto">
+          <TextBlock Text="{DynamicResource LblTheoraQuality}" />
+          <Grid Grid.Column="1" ColumnDefinitions="*,50">
+            <Slider Minimum="0" Maximum="10" Value="{Binding Godot.Quality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding Godot.Quality}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+          </Grid>
+          <TextBlock Grid.Row="1" Text="{DynamicResource LblMaxHeight}" />
+          <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Heights}" SelectedItem="{Binding Godot.MaxHeight}" ItemTemplate="{StaticResource HeightLabel}" />
+          <TextBlock Grid.Row="2" Text="{DynamicResource LblFps}" />
+          <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Rates}" SelectedItem="{Binding Godot.Fps}" ItemTemplate="{StaticResource FpsLabel}" />
+          <TextBlock Grid.Row="3" Text="{DynamicResource LblVorbisAudio}" />
+          <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AudioQualities}" SelectedItem="{Binding Godot.AudioQuality}" ItemTemplate="{StaticResource AudioQualityLabel}" />
+        </Grid>
+        <ctl:HintText Hint="{DynamicResource HintGodotVideo}" />
+        <ctl:HintText Classes="keep" Foreground="{DynamicResource BrushWarning}" Hint="{DynamicResource HintTheoraMissing}" IsVisible="{Binding TheoraMissing}" />
+      </StackPanel>
+    </Border>
+  </parts:PageFrame>
+</UserControl>

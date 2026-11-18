@@ -42,14 +42,22 @@ public static class Choices
     public static readonly ThemeOption[] Themes = Enum.GetValues<ThemeOption>();
     public static readonly PriorityOption[] Priorities = Enum.GetValues<PriorityOption>();
     public static readonly DisplayProfile[] DisplayProfiles = Enum.GetValues<DisplayProfile>();
+    public static readonly Core.Machine.PerformanceProfile[] PerformanceProfiles = Enum.GetValues<Core.Machine.PerformanceProfile>();
     public static readonly DdsCompression[] DdsCompressions = Enum.GetValues<DdsCompression>();
     public static readonly PowerOfTwo[] PowerOfTwoModes = Enum.GetValues<PowerOfTwo>();
     public static readonly LoudnessTarget[] LoudnessTargets = Enum.GetValues<LoudnessTarget>();
     public static readonly CompressMode[] CompressModes = Enum.GetValues<CompressMode>();
     public static readonly CompressStrength[] CompressStrengths = Enum.GetValues<CompressStrength>();
     public static readonly CompressImageFormat[] CompressImageFormats = Enum.GetValues<CompressImageFormat>();
-    public static readonly TexturePreset[] TexturePresets = Enum.GetValues<TexturePreset>();
-    public static readonly GameAudioPreset[] GameAudioPresets = Enum.GetValues<GameAudioPreset>();
+    /// <summary>Godot first (most used), then Unity, Unreal and the rest.</summary>
+    public static readonly TexturePreset[] TexturePresets =
+        [TexturePreset.Godot, TexturePreset.Unity, TexturePreset.Unreal, TexturePreset.DirectX, TexturePreset.Legacy, TexturePreset.Custom];
+
+    public static readonly GameAudioPreset[] GameAudioPresets =
+    [
+        GameAudioPreset.GodotSfx, GameAudioPreset.GodotMusic, GameAudioPreset.UnitySfx, GameAudioPreset.UnityMusic,
+        GameAudioPreset.UnrealSfx, GameAudioPreset.UnrealMusic, GameAudioPreset.Custom
+    ];
     public static readonly ResolutionPreset[] MaxResolutions = [ResolutionPreset.Original, ResolutionPreset.P2160, ResolutionPreset.P1440, ResolutionPreset.P1080, ResolutionPreset.P720, ResolutionPreset.P480];
     public static readonly FrameRatePreset[] MaxFrameRates = [FrameRatePreset.Original, FrameRatePreset.Fps60, FrameRatePreset.Fps30, FrameRatePreset.Fps25, FrameRatePreset.Fps24];
     public static readonly int[] TargetSizesMb = [5, 8, 10, 16, 20, 25, 50, 100, 200, 500, 1000, 2000];

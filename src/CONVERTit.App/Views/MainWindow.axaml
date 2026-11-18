@@ -8,7 +8,8 @@
         Background="{DynamicResource BrushBgApp}"
         Width="1400" Height="900"
         MinWidth="1000" MinHeight="640"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Classes.nohints="{Binding HideHints}">
 
   <!-- Sidebar entries: pages, groups and dividers (shared by top and bottom navigation) -->
   <Window.DataTemplates>
@@ -20,6 +21,7 @@
       <Button Classes="nav"
               Classes.selected="{Binding IsSelected}"
               Classes.child="{Binding IsChild}"
+              Classes.queuenav="{Binding IsAccent}"
               Command="{Binding $parent[Window].DataContext.NavigateCommand}"
               CommandParameter="{Binding}"
               ToolTip.Tip="{Binding Title}">
@@ -94,65 +96,81 @@
         </Border>
 
         <!-- ===================================================== Header -->
-        <Border Grid.Column="1"
-                Padding="28,16,22,14"
-                BorderBrush="{DynamicResource BrushBorder}"
-                BorderThickness="0,0,0,1">
-          <Grid ColumnDefinitions="Auto,*,Auto">
-            <PathIcon Data="{Binding CurrentPageIcon}" Width="22" Height="22" Margin="0,0,12,0"
-                      Foreground="{DynamicResource BrushAccentIcon}" VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-              <TextBlock Classes="h1" FontWeight="Normal" Foreground="{DynamicResource BrushTextSecondary}"
-                         Text="{Binding CurrentPage.GroupTitle}" IsVisible="{Binding CurrentPage.HasGroup}" />
-              <PathIcon Data="{StaticResource IconChevronRight}" Width="16" Height="16" Foreground="{DynamicResource BrushTextSecondary}"
-                        IsVisible="{Binding CurrentPage.HasGroup}" />
-              <TextBlock Classes="h1" Text="{Binding CurrentPage.Title}" />
-            </StackPanel>
-
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-              <!-- Background activity: loading files / media, FFmpeg download -->
-              <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding HasActivity}" VerticalAlignment="Center"
-                          ToolTip.Tip="{Binding ActivityText}">
-                <ProgressBar Classes="thin" Width="110" Minimum="0" Maximum="100" Value="{Binding ActivityProgress}"
-                             IsIndeterminate="{Binding ActivityIndeterminate}" VerticalAlignment="Center" />
-                <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" Text="{Binding ActivityText}"
-                           MaxWidth="260" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <!-- The line under the header doubles as progress bar (loading files, queue) -->
+        <Panel Grid.Column="1">
+          <Border Padding="28,16,22,14">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{Binding CurrentPageIcon}" Width="22" Height="22" Margin="0,0,12,0"
+                        Foreground="{DynamicResource BrushAccentIcon}" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" ClipToBounds="True">
+                <TextBlock Classes="h1" FontWeight="Normal" Foreground="{DynamicResource BrushTextSecondary}"
+                           Text="{Binding CurrentPage.GroupTitle}" IsVisible="{Binding CurrentPage.HasGroup}" />
+                <PathIcon Data="{StaticResource IconChevronRight}" Width="16" Height="16" Foreground="{DynamicResource BrushTextSecondary}"
+                          IsVisible="{Binding CurrentPage.HasGroup}" />
+                <TextBlock Classes="h1" Text="{Binding CurrentPage.Title}" />
               </StackPanel>
 
-              <!-- Queue progress (click: open queue) -->
-              <Button Classes="link" Command="{Binding OpenQueueCommand}" IsVisible="{Binding QueueBusy}" ToolTip.Tip="{DynamicResource NavQueue}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <ProgressBar Classes="thin" Width="130" Minimum="0" Maximum="100" Value="{Binding QueueProgress}" VerticalAlignment="Center" />
-                  <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" Text="{Binding QueueStatusText}" VerticalAlignment="Center" />
-                </StackPanel>
-              </Button>
-
-              <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsTestingEncoders}" VerticalAlignment="Center">
-                <PathIcon Data="{StaticResource IconChip}" Width="14" Height="14" Foreground="{DynamicResource BrushTextSecondary}" />
-                <TextBlock Classes="small muted" Text="{DynamicResource TestingEncoders}" />
-              </StackPanel>
-
-              <!-- FFmpeg state: installed (check, accent) → dependencies; missing (orange) → setup dialog -->
-              <Button Classes="bare" Command="{Binding FfmpegPillCommand}" ToolTip.Tip="{Binding FfmpegPillTip}">
-                <Border Classes="pill" Classes.ok="{Binding FfmpegReady}" Classes.warn="{Binding !FfmpegReady}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" IsVisible="{Binding FfmpegReady}" />
-                    <PathIcon Data="{StaticResource IconAlert}" Width="14" Height="14" IsVisible="{Binding !FfmpegReady}" />
-                    <TextBlock Classes="small" Text="{Binding FfmpegPillText}" />
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <!-- Status slot: fixed width, so nothing to the right moves when the text changes -->
+                <Panel Width="280" Margin="0,0,8,0" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center"
+                              IsVisible="{Binding HeaderStatusIsActivity}" ToolTip.Tip="{Binding HeaderStatusText}">
+                    <PathIcon Data="{StaticResource IconRefresh}" Width="13" Height="13" Foreground="{DynamicResource BrushAccentIcon}" />
+                    <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" Text="{Binding HeaderStatusText}"
+                               MaxWidth="255" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
-                </Border>
-              </Button>
-
-              <!-- Light / dark -->
-              <Button Classes="icon" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{DynamicResource TipToggleTheme}">
-                <Panel>
-                  <PathIcon Data="{StaticResource IconSun}" IsVisible="{Binding IsDark}" />
-                  <PathIcon Data="{StaticResource IconMoon}" IsVisible="{Binding !IsDark}" />
+                  <Button Classes="link" HorizontalAlignment="Right" Command="{Binding OpenQueueCommand}"
+                          IsVisible="{Binding HeaderStatusIsQueue}" ToolTip.Tip="{Binding HeaderStatusText}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <PathIcon Data="{StaticResource IconQueue}" Width="13" Height="13" Foreground="{DynamicResource BrushAccentIcon}" />
+                      <TextBlock Classes="small" Foreground="{DynamicResource BrushTextSecondary}" Text="{Binding HeaderStatusText}"
+                                 MaxWidth="255" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Button>
+                  <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center"
+                              IsVisible="{Binding ShowEncoderTest}">
+                    <PathIcon Data="{StaticResource IconChip}" Width="13" Height="13" Foreground="{DynamicResource BrushTextSecondary}" />
+                    <TextBlock Classes="small muted" Text="{DynamicResource TestingEncoders}" />
+                  </StackPanel>
                 </Panel>
-              </Button>
-            </StackPanel>
-          </Grid>
-        </Border>
+
+                <!-- Back / forward through the visited pages -->
+                <Button Classes="navarrow" Command="{Binding GoBackCommand}" ToolTip.Tip="{DynamicResource TipBack}">
+                  <PathIcon Data="{StaticResource IconArrowLeft}" />
+                </Button>
+                <Button Classes="navarrow" Command="{Binding GoForwardCommand}" ToolTip.Tip="{DynamicResource TipForward}">
+                  <PathIcon Data="{StaticResource IconArrowRight}" />
+                </Button>
+
+                <!-- FFmpeg: installed = check only (click unfolds the version, second click → dependencies);
+                     missing = always unfolded and orange (click → setup dialog) -->
+                <Button x:Name="FfmpegPillButton" Classes="bare" Command="{Binding FfmpegPillCommand}" ToolTip.Tip="{Binding FfmpegPillTip}"
+                        Margin="4,0">
+                  <Border Classes="pill headpill" Classes.ok="{Binding FfmpegReady}" Classes.warn="{Binding !FfmpegReady}"
+                          Classes.folded="{Binding !ShowFfmpegPillText}">
+                    <StackPanel Orientation="Horizontal">
+                      <PathIcon Data="{StaticResource IconCheckCircle}" Width="16" Height="16" IsVisible="{Binding FfmpegReady}" />
+                      <PathIcon Data="{StaticResource IconAlert}" Width="16" Height="16" IsVisible="{Binding !FfmpegReady}" />
+                      <Border Classes="pilltext" Classes.open="{Binding ShowFfmpegPillText}" ClipToBounds="True">
+                        <TextBlock Classes="small" Text="{Binding FfmpegPillText}" Margin="6,0,0,0" VerticalAlignment="Center" />
+                      </Border>
+                    </StackPanel>
+                  </Border>
+                </Button>
+
+                <!-- Light / dark -->
+                <Button Classes="icon" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{DynamicResource TipToggleTheme}">
+                  <Panel>
+                    <PathIcon Data="{StaticResource IconSun}" IsVisible="{Binding IsDark}" />
+                    <PathIcon Data="{StaticResource IconMoon}" IsVisible="{Binding !IsDark}" />
+                  </Panel>
+                </Button>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <ProgressBar Classes="headline" Classes.active="{Binding LineActive}" VerticalAlignment="Bottom"
+                       Minimum="0" Maximum="100" Value="{Binding LineValue}" IsIndeterminate="{Binding LineIndeterminate}" />
+        </Panel>
 
         <!-- ===================================================== Content -->
         <Panel Grid.Row="1" Grid.Column="1">
@@ -223,7 +241,7 @@
               </StackPanel>
             </Border>
 
-            <ctl:HintText Hint="{DynamicResource SetupNote}" IsVisible="{Binding FfmpegMissing}" />
+            <ctl:HintText Classes="keep" Hint="{DynamicResource SetupNote}" IsVisible="{Binding FfmpegMissing}" />
 
             <!-- Main action right, others left -->
             <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">

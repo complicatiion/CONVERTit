@@ -55,6 +55,9 @@ public abstract class PageViewModel(MainViewModel main) : ObservableObject
 
     public string GroupTitle => GroupKey.Length > 0 ? Loc.T(GroupKey) : "";
 
+    /// <summary>"Video › Trim & Loop" (menus that list pages of several groups).</summary>
+    public string FullTitle => GroupKey.Length > 0 ? $"{GroupTitle} › {Title}" : Title;
+
     public bool HasGroup => GroupKey.Length > 0;
 
     public virtual void OnActivated()
@@ -157,6 +160,9 @@ public sealed partial class NavItem : ObservableObject
     public bool HasBadge => Badge.Length > 0;
 
     public bool IsChild => Group is not null;
+
+    /// <summary>Shown in the accent color (queue).</summary>
+    public bool IsAccent { get; init; }
 
     partial void OnBadgeChanged(string value) => OnPropertyChanged(nameof(HasBadge));
 

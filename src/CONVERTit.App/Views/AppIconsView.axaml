@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.AppIconsView">
+  <!-- DataContext: AppIconsViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <!-- Platforms -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconCellphone}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrAppIconTargets}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="Android" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding Android}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Text="Android TV" />
+            <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding AndroidTv}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="2" Text="iOS / iPadOS" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding Ios}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="macOS" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding MacOs}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="4" Text="Windows" />
+            <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding Windows}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblWebPwa}" />
+            <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding Web}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="6" Text="{DynamicResource LblGodotExport}" />
+            <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding Godot}" OnContent="" OffContent="" />
+          </Grid>
+          <TextBlock Classes="small accent" Text="{Binding FileCountText}" Margin="0,0,0,4" />
+          <ctl:HintText Hint="{DynamicResource HintAppIcons}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Mini editor: drag the preview to move, mouse wheel to resize -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconCrop}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrAppIconEditor}" />
+            <ProgressBar IsIndeterminate="True" Width="60" Classes="thin" IsVisible="{Binding IsRendering}" />
+          </StackPanel>
+          <Border x:Name="PreviewArea" Background="{DynamicResource BrushSurfaceRaised}" CornerRadius="10" Padding="14" Cursor="SizeAll"
+                  MinHeight="200" Margin="0,0,0,12">
+            <Panel>
+              <ItemsControl ItemsSource="{Binding Previews}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><WrapPanel HorizontalAlignment="Center" /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Margin="10" Spacing="6" VerticalAlignment="Bottom">
+                      <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" />
+                      <TextBlock Classes="small muted" Text="{Binding Label}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="muted" Text="{DynamicResource AppIconPickImage}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         IsVisible="{Binding !Sources.HasItems}" />
+            </Panel>
+          </Border>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblMotifSize}" />
+            <Grid Grid.Column="1" ColumnDefinitions="*,60">
+              <Slider Minimum="10" Maximum="200" Value="{Binding Scale}" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Scale, StringFormat={}{0} %}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblOffsetX}" />
+            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,60">
+              <Slider Minimum="-50" Maximum="50" Value="{Binding OffsetX}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding OffsetX, StringFormat={}{0} %}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblOffsetY}" />
+            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,60">
+              <Slider Minimum="-50" Maximum="50" Value="{Binding OffsetY}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding OffsetY, StringFormat={}{0} %}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblBackground}" />
+            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding Background}" Watermark="#FFFFFF" />
+              <Border Grid.Column="1" Width="30" Height="30" CornerRadius="6" Margin="8,0,0,0" BorderThickness="1" BorderBrush="{DynamicResource BrushBorder}"
+                      Background="{Binding Background}" />
+            </Grid>
+            <ItemsControl Grid.Row="4" Grid.Column="1" ItemsSource="{Binding BackgroundPresets}" Margin="0,0,0,10">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Button Classes="bare" Margin="0,0,6,0" Command="{Binding $parent[UserControl].DataContext.SetBackgroundCommand}" CommandParameter="{Binding}"
+                          ToolTip.Tip="{Binding}">
+                    <Border Width="24" Height="24" CornerRadius="12" Background="{Binding}" BorderThickness="1" BorderBrush="{DynamicResource BrushBorder}" />
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblTransparentBackground}" />
+            <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding TransparentBackground}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="6" Text="{DynamicResource LblShowSafeZone}" />
+            <ToggleSwitch Grid.Row="6" Grid.Column="1" IsChecked="{Binding ShowSafeZone}" OnContent="" OffContent="" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Text="{Binding AppName}" Watermark="{DynamicResource WatermarkAppName}" Margin="0,0,12,0" />
+            <Button Grid.Column="1" Command="{Binding ResetEditorCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconUndo}" Text="{DynamicResource BtnResetEditor}" />
+            </Button>
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintAppIconEditor}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

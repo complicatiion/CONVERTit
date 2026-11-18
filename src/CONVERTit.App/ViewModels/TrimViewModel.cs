@@ -5,10 +5,12 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CONVERTit.App.Localization;
+using CONVERTit.Core.Estimation;
 using CONVERTit.Core.Ffmpeg;
 using CONVERTit.Core.Jobs;
 using CONVERTit.Core.Media;
 using CONVERTit.Core.Options;
+using CONVERTit.Core.Storage;
 using LibVLCSharp.Shared;
 
 namespace CONVERTit.App.ViewModels;
@@ -52,6 +54,8 @@ public sealed partial class TrimViewModel : ConvertPageViewModel, IDisposable
             OnPropertyChanged(nameof(ShowLoopTarget));
             OnPropertyChanged(nameof(ShowBoomerangHint));
             OnPropertyChanged(nameof(IsConvertOutput));
+            OnPropertyChanged(nameof(IsAnimationOutput));
+            OnPropertyChanged(nameof(AnimationEstimate));
         };
     }
 
@@ -71,14 +75,176 @@ public sealed partial class TrimViewModel : ConvertPageViewModel, IDisposable
 
     public LoopMode[] LoopModes => Choices.LoopModes;
 
-    public TrimOutput[] Outputs => Choices.TrimOutputs;
+    /// <summary>GIF and animated WebP only for videos.</summary>
+    public TrimOutput[] Outputs => IsVideo ? Choices.TrimOutputs : [TrimOutput.SameFormat, TrimOutput.Convert];
+
+    public bool IsAnimationOutput => Trim.Output is TrimOutput.Gif or TrimOutput.AnimatedWebP;
+
+    public int[] AnimationWidths { get; } = [240, 320, 400, 480, 640, 800, 0];
+
+    public int[] AnimationRates { get; } = [8, 10, 12, 15, 20, 24, 30];
+
+    /// <summary>"≈ 6.4 MB" for GIF/WebP; warns when the file gets large.</summary>
+    public string AnimationEstimate
+    {
+        get
+        {
+            var info = Sources.SelectedItem?.Info;
+            var video = info?.MainVideo;
+            if (!IsAnimationOutput || video is null || Duration <= 0)
+            {
+                return "";
+            }
+
+            var (sw, sh) = video.DisplaySize;
+            var width = Trim.AnimationWidth > 0 ? Math.Min(Trim.AnimationWidth, sw) : sw;
+            var height = sw > 0 ? width * sh / (double)sw : sh;
+            var seconds = ResultSeconds * (Trim.Loop == LoopMode.Boomerang ? 2 : 1);
+            var bytes = SizeEstimator.Animation(width, height, Trim.AnimationFps, seconds, Trim.Output == TrimOutput.Gif);
+            return Loc.F(bytes > 15_000_000 ? "AnimationEstimateLarge" : "AnimationEstimate", Units.Bytes(bytes));
+        }
+    }
+
+    // ---------------------------------------------------------------- Multi-cut
+
+    /// <summary>Segments of the multi-cut (empty = start/end marks apply).</summary>
+    public IReadOnlyList<TrimSegment> Segments => Trim.Segments;
+
+    public bool HasCuts => Trim.Segments.Count > 0;
+
+    /// <summary>Redraw trigger for the timeline (the list instance stays the same).</summary>
+    [ObservableProperty] private int _segmentsVersion;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedSegment), nameof(SelectedSegmentRemoved))]
+    private int _selectedSegment = -1;
+
+    public bool HasSelectedSegment => SelectedSegment >= 0 && SelectedSegment < Trim.Segments.Count;
+
+    public bool SelectedSegmentRemoved => HasSelectedSegment && Trim.Segments[SelectedSegment].Removed;
+
+    /// <summary>"3 segments · 2 kept · 00:45.200".</summary>
+    public string CutsText => HasCuts
+        ? Loc.F("CutsSummary", Trim.Segments.Count, Trim.Segments.Count(s => !s.Removed), Timecode.Format(CutList.KeptLength(Trim.Segments, Duration)))
+        : "";
+
+    /// <summary>Length of the result before loops (multi-cut, range or whole file).</summary>
+    private double ResultSeconds
+    {
+        get
+        {
+            if (HasCuts)
+            {
+                return CutList.KeptLength(Trim.Segments, Duration);
+            }
+
+            var start = Trim.TrimEnabled ? Trim.Start : 0;
+            var end = Trim.TrimEnabled && Trim.End > start ? Trim.End : Duration;
+            return Math.Max(0, end - start);
+        }
+    }
+
+    private void SegmentsChanged()
+    {
+        SegmentsVersion++;
+        if (SelectedSegment >= Trim.Segments.Count)
+        {
+            SelectedSegment = Trim.Segments.Count - 1;
+        }
+
+        foreach (var name in new[] { nameof(HasCuts), nameof(CutsText), nameof(ResultText), nameof(AnimationEstimate), nameof(HasSelectedSegment), nameof(SelectedSegmentRemoved) })
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
+    /// <summary>Cut at the playback position (S / C, scissors button, right-click).</summary>
+    [RelayCommand]
+    private void CutHere() => CutAt(Position);
+
+    public void CutAt(double time)
+    {
+        if (Duration <= 0 || !CutList.Split(Trim.Segments, time, Duration))
+        {
+            return;
+        }
+
+        SelectedSegment = CutList.IndexAt(Trim.Segments, time);
+        SegmentsChanged();
+    }
+
+    /// <summary>Removes (or restores) the selected segment (Del, trash button).</summary>
+    [RelayCommand]
+    private void ToggleSegment()
+    {
+        if (!HasSelectedSegment)
+        {
+            return;
+        }
+
+        var segment = Trim.Segments[SelectedSegment];
+        segment.Removed = !segment.Removed;
+        SegmentsChanged();
+    }
+
+    [RelayCommand]
+    private void KeepOnlySegment()
+    {
+        if (HasSelectedSegment)
+        {
+            CutList.KeepOnly(Trim.Segments, SelectedSegment);
+            SegmentsChanged();
+        }
+    }
+
+    /// <summary>Removes the cut line closest to the time (joins its two segments).</summary>
+    public void RemoveCutNear(double time)
+    {
+        if (Trim.Segments.Count < 2)
+        {
+            return;
+        }
+
+        var cut = Enumerable.Range(1, Trim.Segments.Count - 1).MinBy(i => Math.Abs(Trim.Segments[i].Start - time));
+        CutList.Join(Trim.Segments, cut);
+        SegmentsChanged();
+    }
+
+    [RelayCommand]
+    private void ClearCuts()
+    {
+        Trim.Segments.Clear();
+        SelectedSegment = -1;
+        SegmentsChanged();
+    }
+
+    /// <summary>A cut line was dragged on the timeline.</summary>
+    public void MoveCut(int cut, double time)
+    {
+        Position = CutList.MoveCut(Trim.Segments, cut, time);
+        SegmentsChanged();
+    }
+
+    /// <summary>Selects the segment under the playback position (for Del after seeking).</summary>
+    partial void OnSegmentsVersionChanged(int value) => OnPropertyChanged(nameof(Segments));
 
     /// <summary>LibVLC player (null when the native libraries are not available).</summary>
     public MediaPlayer? Player => _player;
 
     public bool HasPlayer => _player is not null;
 
-    public bool ShowVideoSurface => IsVideo && HasPlayer;
+    /// <summary>Video surface only with an open file: without one the area shows the card background, not black.</summary>
+    public bool ShowVideoSurface => IsVideo && HasPlayer && HasSource;
+
+    /// <summary>Display aspect ratio of the open video (sizes the surface so no black bars appear around it).</summary>
+    public double VideoAspect =>
+        Sources.SelectedItem?.Info?.MainVideo is { } v && v.DisplaySize is var (w, h) && w > 0 && h > 0 ? w / (double)h : 16 / 9.0;
+
+    /// <summary>Start/end fields and "Play range" folded under the player controls.</summary>
+    [ObservableProperty] private bool _showRangeOptions;
+
+    /// <summary>Short play/pause symbol over the video after a click on it.</summary>
+    [ObservableProperty] private bool _showClickIndicator;
 
     /// <summary>Still frame when no player is available (FFmpeg frame grab).</summary>
     public bool ShowStillFrame => IsVideo && !HasPlayer;
@@ -157,9 +323,7 @@ public sealed partial class TrimViewModel : ConvertPageViewModel, IDisposable
                 return "";
             }
 
-            var start = Trim.TrimEnabled ? Trim.Start : 0;
-            var end = Trim.TrimEnabled && Trim.End > start ? Trim.End : Duration;
-            var segment = Math.Max(0, end - start);
+            var segment = ResultSeconds;
             return Trim.Loop switch
             {
                 LoopMode.Count => Loc.F("TrimResultLoop", Timecode.Format(segment), Math.Max(1, Trim.LoopCount), Timecode.Format(segment * Math.Max(1, Trim.LoopCount))),
@@ -265,6 +429,9 @@ public sealed partial class TrimViewModel : ConvertPageViewModel, IDisposable
     [RelayCommand]
     private void ResetTrim()
     {
+        Trim.Segments.Clear();
+        SelectedSegment = -1;
+        SegmentsChanged();
         Trim.Start = 0;
         Trim.End = 0;
         Trim.FadeIn = 0;
@@ -299,8 +466,14 @@ public sealed partial class TrimViewModel : ConvertPageViewModel, IDisposable
         EndLoading();
         Thumbnails.Clear();
         Frame = null;
+        // Cuts belong to one file.
+        Trim.Segments.Clear();
+        SelectedSegment = -1;
+        SegmentsChanged();
         OnPropertyChanged(nameof(HasSource));
         OnPropertyChanged(nameof(ShowAudioPosition));
+        OnPropertyChanged(nameof(ShowVideoSurface));
+        OnPropertyChanged(nameof(VideoAspect));
         StartCommand.NotifyCanExecuteChanged();
         if (item is null)
         {
@@ -383,6 +556,7 @@ public sealed partial class TrimViewModel : ConvertPageViewModel, IDisposable
     /// <summary>Loading ends when the file is probed, the player shows its first frame and the thumbnails are there.</summary>
     private void CheckLoaded()
     {
+        OnPropertyChanged(nameof(VideoAspect));
         var item = Sources.SelectedItem;
         if (item is null || (!item.IsProbing && !_waitPlaying && !_waitThumbs))
         {

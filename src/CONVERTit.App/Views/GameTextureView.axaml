@@ -21,6 +21,30 @@
           <ctl:HintText Hint="{DynamicResource HintTextures}" />
         </StackPanel>
       </Border>
+
+      <!-- 2D tools: pixel art scaling and normal maps (2D lighting) -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconGamepad}" />
+            <TextBlock Classes="h2" Text="{DynamicResource Hdr2DTools}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblPixelScale}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding PixelScales}" SelectedItem="{Binding Image.Options.PixelScale}" ItemTemplate="{StaticResource FactorLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblNormalMap}" />
+            <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding Image.Options.NormalMap}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblNormalStrength}" IsVisible="{Binding Image.Options.NormalMap}" />
+            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,60" IsVisible="{Binding Image.Options.NormalMap}">
+              <Slider Minimum="0.5" Maximum="10" Value="{Binding Image.Options.NormalStrength}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Image.Options.NormalStrength, StringFormat={}{0:0.0}}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+            </Grid>
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblNormalInvertY}" IsVisible="{Binding Image.Options.NormalMap}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding Image.Options.NormalInvertY}" OnContent="" OffContent="" IsVisible="{Binding Image.Options.NormalMap}" />
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource Hint2DTools}" />
+        </StackPanel>
+      </Border>
       <parts:ImageOptionsPanel DataContext="{Binding Image}" />
     </StackPanel>
   </parts:PageFrame>

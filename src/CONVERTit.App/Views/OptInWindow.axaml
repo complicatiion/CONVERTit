@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="using:CONVERTit.App.Controls"
+        x:Class="CONVERTit.App.Views.OptInWindow"
+        Icon="/Assets/convertit.ico"
+        Width="560"
+        SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <!-- Active opt-in: the main action is enabled only after the user ticks "I understand". -->
+  <Border Padding="24">
+    <StackPanel Spacing="14">
+      <PathIcon Data="{StaticResource IconDownload}" Width="36" Height="36" HorizontalAlignment="Center" Foreground="{DynamicResource BrushAccentIcon}" />
+      <TextBlock x:Name="HeaderText" Classes="h2" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+      <TextBlock x:Name="MessageText" Classes="muted" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+      <!-- One row per item: name + description, license, globe (project page), license text -->
+      <Border Classes="inset">
+        <StackPanel x:Name="ItemsPanel" Spacing="10" />
+      </Border>
+      <CheckBox x:Name="UnderstandBox" HorizontalAlignment="Center">
+        <TextBlock x:Name="UnderstandText" TextWrapping="Wrap" MaxWidth="460" />
+      </CheckBox>
+      <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" Margin="0,6,0,0">
+        <Button Click="OnCancel" IsCancel="True" Classes="fixed">
+          <ctl:IconLabel Icon="{StaticResource IconClose}" Text="{DynamicResource BtnCancel}" />
+        </Button>
+        <Button x:Name="ConfirmButton" Click="OnConfirm" Classes="primary fixed" IsEnabled="False">
+          <ctl:IconLabel x:Name="ConfirmLabel" Icon="{StaticResource IconDownload}" />
+        </Button>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

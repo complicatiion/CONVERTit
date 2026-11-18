@@ -41,10 +41,19 @@
     <Border DockPanel.Dock="Top" Classes="inset" Margin="0,0,0,12" IsVisible="{Binding ShowFolderOptions}">
       <StackPanel Spacing="8">
         <TextBlock Classes="section" Text="{DynamicResource HdrFolderOptions}" />
-        <CheckBox IsChecked="{Binding Folder.Recursive}" Content="{DynamicResource OptRecursive}" />
-        <CheckBox IsChecked="{Binding Folder.AllOfKind}" Content="{DynamicResource OptAllOfKind}" />
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{DynamicResource OptRecursive}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding Folder.Recursive}" OnContent="" OffContent="" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{DynamicResource OptAllOfKind}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding Folder.AllOfKind}" OnContent="" OffContent="" />
+        </Grid>
         <TextBox Text="{Binding Folder.Extensions}" Watermark="{DynamicResource WatermarkExtensions}" IsVisible="{Binding !Folder.AllOfKind}" />
-        <CheckBox IsChecked="{Binding Folder.SkipSameFormat}" Content="{DynamicResource OptSkipSameFormat}" />
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{DynamicResource OptSkipSameFormat}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding Folder.SkipSameFormat}" OnContent="" OffContent="" />
+        </Grid>
         <ctl:HintText Hint="{DynamicResource HintFolderOptions}" />
       </StackPanel>
     </Border>
@@ -84,9 +93,15 @@
         <ListBox.ItemTemplate>
           <DataTemplate>
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
-              <Border Width="32" Height="32" CornerRadius="8" Background="{Binding Kind, Converter={StaticResource KindBrush}, ConverterParameter=soft}" Margin="0,0,12,0">
-                <PathIcon Data="{Binding Kind, Converter={StaticResource KindIcon}}" Width="16" Height="16"
-                          Foreground="{Binding Kind, Converter={StaticResource KindBrush}}" HorizontalAlignment="Center" />
+              <!-- Thumbnail (Windows or own cache); the type icon shows until it is there or when there is none -->
+              <Border Width="40" Height="40" CornerRadius="8" ClipToBounds="True" Margin="0,0,12,0"
+                      Background="{Binding Kind, Converter={StaticResource KindBrush}, ConverterParameter=soft}">
+                <Panel>
+                  <PathIcon Data="{Binding Kind, Converter={StaticResource KindIcon}}" Width="16" Height="16"
+                            Foreground="{Binding Kind, Converter={StaticResource KindBrush}}" HorizontalAlignment="Center"
+                            IsVisible="{Binding !HasThumbnail}" />
+                  <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" IsVisible="{Binding HasThumbnail}" />
+                </Panel>
               </Border>
               <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                 <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
@@ -119,11 +134,28 @@
                   <PathIcon Data="{StaticResource IconFolderOpen}" />
                 </Button>
               </StackPanel>
-              <Button Grid.Column="4" Classes="icon small" VerticalAlignment="Center"
+              <Button Grid.Column="4" Classes="icon small close" VerticalAlignment="Center"
                       Command="{Binding $parent[UserControl].DataContext.RemoveCommand}" CommandParameter="{Binding}"
                       ToolTip.Tip="{DynamicResource TipRemove}">
                 <PathIcon Data="{StaticResource IconClose}" />
               </Button>
+
+              <!-- "Convert" on the page (Quick Convert): progress, then done / failed in the row -->
+              <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" ColumnDefinitions="*,Auto" Margin="0,4,4,0" IsVisible="{Binding HasJob}">
+                <ProgressBar Classes="thin" Minimum="0" Maximum="1" Value="{Binding JobProgress}" VerticalAlignment="Center" IsVisible="{Binding JobActive}" />
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding JobDone}">
+                  <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" Foreground="{DynamicResource BrushAccentIcon}" />
+                  <TextBlock Classes="small" Text="{Binding JobTip}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding JobFailed}" ToolTip.Tip="{Binding JobTip}">
+                  <PathIcon Data="{StaticResource IconAlertCircle}" Width="14" Height="14" Foreground="{DynamicResource BrushDanger}" />
+                  <TextBlock Classes="small" Foreground="{DynamicResource BrushDanger}" Text="{DynamicResource StateFailed}" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Grid.Column="1" Classes="icon small" Command="{Binding ShowResultCommand}" IsVisible="{Binding JobDone}"
+                        ToolTip.Tip="{DynamicResource TipShowResult}">
+                  <PathIcon Data="{StaticResource IconFolderOpen}" />
+                </Button>
+              </Grid>
 
               <!-- Progress of the playing row: click or drag to seek -->
               <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" ColumnDefinitions="*,Auto" Margin="0,4,4,0" IsVisible="{Binding IsPlayerActive}">

@@ -53,14 +53,17 @@
 
           <!-- Own profiles -->
           <Border Classes="divider" Margin="0,4,0,14" />
-          <Grid ColumnDefinitions="*,Auto,Auto">
-            <TextBox Text="{Binding NewProfileName}" Watermark="{DynamicResource WatermarkProfileName}" Margin="0,0,8,0" />
-            <Button Grid.Column="1" Command="{Binding DeleteProfileCommand}" Margin="0,0,8,0">
-              <ctl:IconLabel Icon="{StaticResource IconDelete}" Text="{DynamicResource BtnDeleteProfile}" />
-            </Button>
-            <Button Grid.Column="2" Command="{Binding SaveProfileCommand}">
-              <ctl:IconLabel Icon="{StaticResource IconSave}" Text="{DynamicResource BtnSaveProfile}" />
-            </Button>
+          <!-- Name field narrower; both buttons share the width of the right-aligned option column -->
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Text="{Binding NewProfileName}" Watermark="{DynamicResource WatermarkProfileName}" Margin="0,0,12,0" />
+            <Grid Grid.Column="1" Width="280" ColumnDefinitions="*,8,*">
+              <Button Classes="danger" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding DeleteProfileCommand}">
+                <ctl:IconLabel Icon="{StaticResource IconDelete}" Text="{DynamicResource BtnDeleteProfile}" />
+              </Button>
+              <Button Grid.Column="2" Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SaveProfileCommand}">
+                <ctl:IconLabel Icon="{StaticResource IconSave}" Text="{DynamicResource BtnSaveProfile}" />
+              </Button>
+            </Grid>
           </Grid>
         </StackPanel>
       </Border>

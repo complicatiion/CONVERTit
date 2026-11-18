@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.SpritesView">
+  <!-- DataContext: SpritesViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <!-- Sheet layout -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconViewGrid}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrSpriteSheet}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblSheetName}" />
+            <TextBox Grid.Column="1" Text="{Binding SheetName}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblAnimationName}" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AnimationName}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblSpriteLayout}" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Layouts}" SelectedItem="{Binding Layout}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblColumns}" IsVisible="{Binding IsGrid}" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="256" Value="{Binding Columns}" FormatString="0" IsVisible="{Binding IsGrid}" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblSpacing}" />
+            <NumericUpDown Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="32" Value="{Binding Spacing}" FormatString="0 px" />
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblPowerOfTwoSheet}" />
+            <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding PowerOfTwo}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="6" Text="{DynamicResource LblVideoFrames}" />
+            <NumericUpDown Grid.Row="6" Grid.Column="1" Minimum="1" Maximum="60" Value="{Binding VideoFps}" FormatString="0 fps" />
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintSprites}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Filters -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconTune}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrSpriteFilters}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblTrimTransparent}" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding TrimTransparent}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblSpriteScale}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ScaleChoices}" SelectedItem="{Binding Scale}" ItemTemplate="{StaticResource FactorLabel}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblPixelArt}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding PixelArt}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblPalette}" />
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding PaletteChoices}" SelectedItem="{Binding PaletteColors}" ItemTemplate="{StaticResource ColorsLabel}" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblOutline}" />
+            <NumericUpDown Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="16" Value="{Binding Outline}" FormatString="0 px" />
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblOutlineColor}" />
+            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding OutlineColor}" Watermark="#000000" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Metadata for engines -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconGamepad}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrSpriteMetadata}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblGodotTres}" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding WriteGodot}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblGodotFolder}" IsVisible="{Binding WriteGodot}" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding GodotFolder}" IsVisible="{Binding WriteGodot}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblTexturePackerJson}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding WriteJson}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblFps}" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="1" Maximum="60" Value="{Binding Fps}" FormatString="0 fps" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblLoopAnimation}" />
+            <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding Loop}" OnContent="" OffContent="" />
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintSpriteMetadata}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

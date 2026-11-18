@@ -231,7 +231,7 @@ public sealed partial class CompressViewModel : ConvertPageViewModel
 /// <summary>Saved preset of the texture page.</summary>
 public sealed class TextureState
 {
-    public TexturePreset Preset { get; set; } = TexturePreset.Unity;
+    public TexturePreset Preset { get; set; } = TexturePreset.Godot;
 
     public int MaxSize { get; set; }
 }
@@ -254,7 +254,7 @@ public sealed partial class GameTextureViewModel : ConvertPageViewModel
                 _applying = false;
             }
         };
-        ApplyPreset(TexturePreset.Unity);
+        ApplyPreset(TexturePreset.Godot);
     }
 
     public override string TitleKey => "NavTextures";
@@ -267,9 +267,12 @@ public sealed partial class GameTextureViewModel : ConvertPageViewModel
 
     public TexturePreset[] Presets => Choices.TexturePresets;
 
+    /// <summary>Pixel art enlargement (1 = off).</summary>
+    public int[] PixelScales { get; } = [1, 2, 3, 4, 6, 8];
+
     public int[] MaxSizes => Choices.TextureSizes;
 
-    [ObservableProperty] private TexturePreset _preset = TexturePreset.Unity;
+    [ObservableProperty] private TexturePreset _preset = TexturePreset.Godot;
 
     /// <summary>Longest side in pixels (0 = keep).</summary>
     [ObservableProperty] private int _maxSize;
@@ -284,6 +287,12 @@ public sealed partial class GameTextureViewModel : ConvertPageViewModel
 
     partial void OnMaxSizeChanged(int value)
     {
+        // While loading, the saved resize values stay as they are.
+        if (_applying)
+        {
+            return;
+        }
+
         _applying = true;
         Image.Options.Resize = value > 0 ? ResizeMode.MaxSize : ResizeMode.Off;
         Image.Options.Width = value;
@@ -357,7 +366,7 @@ public sealed partial class GameTextureViewModel : ConvertPageViewModel
 /// <summary>Saved preset of the game audio page.</summary>
 public sealed class GameAudioState
 {
-    public GameAudioPreset Preset { get; set; } = GameAudioPreset.UnitySfx;
+    public GameAudioPreset Preset { get; set; } = GameAudioPreset.GodotSfx;
 }
 
 /// <summary>Sound effects and music for Unity and Godot: WAV/OGG, mono, sample rate, loudness, silence trimming.</summary>
@@ -380,7 +389,7 @@ public sealed partial class GameAudioViewModel : ConvertPageViewModel
                 _applying = false;
             }
         };
-        ApplyPreset(GameAudioPreset.UnitySfx);
+        ApplyPreset(GameAudioPreset.GodotSfx);
     }
 
     public override string TitleKey => "NavGameAudio";
@@ -391,7 +400,7 @@ public sealed partial class GameAudioViewModel : ConvertPageViewModel
 
     public GameAudioPreset[] Presets => Choices.GameAudioPresets;
 
-    [ObservableProperty] private GameAudioPreset _preset = GameAudioPreset.UnitySfx;
+    [ObservableProperty] private GameAudioPreset _preset = GameAudioPreset.GodotSfx;
 
     partial void OnPresetChanged(GameAudioPreset value)
     {

@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:CONVERTit.App.Controls"
+             xmlns:parts="using:CONVERTit.App.Views.Parts"
+             x:Class="CONVERTit.App.Views.UpscaleView">
+  <!-- DataContext: UpscaleViewModel -->
+  <parts:PageFrame>
+    <StackPanel Spacing="16">
+      <Border Classes="banner" IsVisible="{Binding ModuleMissing}">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+          <PathIcon Data="{StaticResource IconPuzzle}" Width="20" Height="20" Foreground="{DynamicResource BrushWarning}" Margin="0,0,12,0" />
+          <TextBlock Grid.Column="1" Text="{Binding ModuleMissingText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="2" Classes="primary" Command="{Binding InstallModuleCommand}" Margin="12,0,0,0">
+            <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadInstall}" />
+          </Button>
+          <Button Grid.Column="3" Command="{Binding OpenDependenciesCommand}" Margin="8,0,0,0">
+            <ctl:IconLabel Icon="{StaticResource IconPackage}" Text="{DynamicResource BtnOpenModules}" />
+          </Button>
+        </Grid>
+      </Border>
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconImageFilterHdr}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrUpscale}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblUpscaleModel}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Engines}" SelectedItem="{Binding Upscale.Engine}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblScaleFactor}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Scales}" SelectedItem="{Binding Upscale.Scale}" ItemTemplate="{StaticResource FactorLabel}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblNoiseLevel}" IsVisible="{Binding IsWaifu2x}" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding NoiseLevels}" SelectedItem="{Binding Upscale.Noise}" ItemTemplate="{StaticResource NoiseLabel}" IsVisible="{Binding IsWaifu2x}" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblTileSize}" />
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding TileSizes}" SelectedItem="{Binding Upscale.TileSize}" ItemTemplate="{StaticResource TileLabel}" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblImageResult}" />
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding ImageFormats}" SelectedItem="{Binding Upscale.ImageFormat}" />
+            <TextBlock Grid.Row="5" Text="{DynamicResource LblVideoCrf}" IsVisible="{Binding HasVideos}" />
+            <Grid Grid.Row="5" Grid.Column="1" ColumnDefinitions="*,50" IsVisible="{Binding HasVideos}">
+              <Slider Minimum="12" Maximum="30" Value="{Binding Upscale.VideoCrf}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Upscale.VideoCrf}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintUpscale}" />
+          <ctl:HintText Hint="{DynamicResource HintUpscaleVideo}" IsVisible="{Binding HasVideos}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </parts:PageFrame>
+</UserControl>

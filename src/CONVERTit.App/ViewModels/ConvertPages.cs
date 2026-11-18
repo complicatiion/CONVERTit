@@ -3,6 +3,7 @@ using System.Text.Json;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CONVERTit.App.Localization;
+using CONVERTit.App.Services;
 using CONVERTit.Core.Catalog;
 using CONVERTit.Core.Estimation;
 using CONVERTit.Core.Jobs;
@@ -26,6 +27,9 @@ public sealed partial class QuickConvertViewModel : ConvertPageViewModel
             OnPropertyChanged(nameof(VideoCount));
             OnPropertyChanged(nameof(AudioCount));
             OnPropertyChanged(nameof(ImageCount));
+            OnPropertyChanged(nameof(HasVideos));
+            OnPropertyChanged(nameof(HasAudio));
+            OnPropertyChanged(nameof(HasImages));
         };
     }
 
@@ -36,9 +40,11 @@ public sealed partial class QuickConvertViewModel : ConvertPageViewModel
     /// <summary>Images work without FFmpeg; video/audio files are checked per job.</summary>
     public override bool NeedsFfmpeg => false;
 
+    public override bool ShowConvertNow => true;
+
     [ObservableProperty] private VideoContainer _videoTarget = VideoContainer.Mp4;
     [ObservableProperty] private AudioFormat _audioTarget = AudioFormat.Mp3;
-    [ObservableProperty] private ImageFormat _imageTarget = ImageFormat.WebP;
+    [ObservableProperty] private ImageFormat _imageTarget = ImageFormat.Jpeg;
 
     public VideoContainer[] VideoTargets => Choices.Containers;
 
@@ -52,7 +58,14 @@ public sealed partial class QuickConvertViewModel : ConvertPageViewModel
 
     public int ImageCount => Sources.Items.Count(i => i.Kind == MediaKind.Image);
 
-    protected override Task<List<ConversionJob>> PlanAsync()
+    /// <summary>The counters next to the target formats only show up when there are files of that kind.</summary>
+    public bool HasVideos => VideoCount > 0;
+
+    public bool HasAudio => AudioCount > 0;
+
+    public bool HasImages => ImageCount > 0;
+
+    protected override async Task<List<ConversionJob>> PlanAsync()
     {
         var jobs = new List<ConversionJob>();
         var skip = Sources.Folder.SkipSameFormat;
@@ -98,10 +111,37 @@ public sealed partial class QuickConvertViewModel : ConvertPageViewModel
         {
             var options = JsonFile.Clone(Main.ImageConvert.Image.Options);
             options.Format = ImageTarget;
-            jobs.AddRange(Main.Conversion.ImageConvert(images, options, Output.Options, skip, "OpConvertImage"));
+
+            // JPEG has no transparency: images with transparent pixels stay PNG (Settings › Transparent images).
+            var keepPng = new List<SourceRef>();
+            if (ImageTarget == ImageFormat.Jpeg && Main.Settings.TransparentImages != Services.TransparencyPolicy.ToJpeg)
+            {
+                keepPng = await Task.Run(() => images.Where(i => ImageEngine.HasTransparency(i.Path)).ToList());
+                if (keepPng.Count > 0 && Main.Settings.TransparentImages == Services.TransparencyPolicy.Ask
+                    && !await Main.Host.ConfirmAsync(Loc.T("ConfirmTransparencyTitle"), Loc.F("ConfirmTransparencyText", keepPng.Count),
+                        Loc.T("BtnKeepPng"), confirmIcon: "IconImage"))
+                {
+                    keepPng.Clear();
+                }
+            }
+
+            if (keepPng.Count > 0)
+            {
+                var png = JsonFile.Clone(Main.ImageConvert.Image.Options);
+                png.Format = ImageFormat.Png;
+                png.KeepTransparency = true;
+                jobs.AddRange(Main.Conversion.ImageConvert(keepPng, png, Output.Options, skip, "OpConvertImage"));
+                images = images.Except(keepPng).ToList();
+                Main.ShowToast(Loc.F("ToastKeptPng", keepPng.Count));
+            }
+
+            if (images.Count > 0)
+            {
+                jobs.AddRange(Main.Conversion.ImageConvert(images, options, Output.Options, skip, "OpConvertImage"));
+            }
         }
 
-        return Task.FromResult(jobs);
+        return jobs;
     }
 
     public override void SaveState(Dictionary<string, JsonElement> pages) =>
@@ -113,7 +153,7 @@ public sealed partial class QuickConvertViewModel : ConvertPageViewModel
         Load(pages, StateKey, Output.Options, Sources.Folder, targets);
         VideoTarget = targets.Video;
         AudioTarget = targets.Audio;
-        ImageTarget = targets.Image == ImageFormat.Keep ? ImageFormat.WebP : targets.Image;
+        ImageTarget = targets.Image == ImageFormat.Keep ? ImageFormat.Jpeg : targets.Image;
     }
 
     /// <summary>Saved target formats (mutable for the state loader).</summary>
@@ -398,7 +438,16 @@ public sealed partial class IconViewModel : ConvertPageViewModel
 
     public IconViewModel(MainViewModel main) : base(main, new HashSet<MediaKind> { MediaKind.Image }, MediaKind.Image)
     {
-        IconSettings.PropertyChanged += (_, _) => _ = RenderPreviewAsync();
+        IconSettings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(IconOptions.Export))
+            {
+                OnPropertyChanged(nameof(ShowSizes));
+                OnPropertyChanged(nameof(ExportHint));
+            }
+
+            _ = RenderPreviewAsync();
+        };
         Sources.SelectionChanged += item => { _ = RenderPreviewAsync(); };
     }
 
@@ -412,12 +461,25 @@ public sealed partial class IconViewModel : ConvertPageViewModel
 
     public IconFit[] Fits => Choices.IconFits;
 
+    public IconExport[] Exports { get; } = Enum.GetValues<IconExport>();
+
+    /// <summary>Size checkboxes for ICO and the PNG set (ICNS always holds 16 … 1024, SVG has no sizes).</summary>
+    public bool ShowSizes => IconSettings.Export is IconExport.Ico or IconExport.PngSet;
+
+    public string ExportHint => Loc.T(IconSettings.Export switch
+    {
+        IconExport.PngSet => "HintIconPngSet",
+        IconExport.Icns => "HintIconIcns",
+        IconExport.Svg => "HintIconSvg",
+        _ => "HintIcon"
+    });
+
     /// <summary>Preview tiles (16, 32, 48, 256 px) on light and dark backgrounds.</summary>
     public ObservableCollection<IconPreview> Previews { get; } = [];
 
     [ObservableProperty] private bool _isRendering;
 
-    protected override bool ExtraCanStart() => IconSettings.SelectedSizes().Length > 0 || IconSettings.FaviconPackage;
+    protected override bool ExtraCanStart() => !ShowSizes || IconSettings.SelectedSizes().Length > 0 || IconSettings.FaviconPackage;
 
     protected override Task<List<ConversionJob>> PlanAsync() =>
         Task.FromResult(Main.Conversion.Icon(Sources.Refs.ToList(), IconSettings, Output.Options));

@@ -29,6 +29,24 @@ public partial class ConfirmWindow : Window
         }
     }
 
+    /// <summary>Adds a second action between Cancel and the main action (shown as a danger button).</summary>
+    public ConfirmWindow WithAlternative(string text, string icon)
+    {
+        AlternativeLabel.Text = text;
+        AlternativeLabel.Icon = Res.Icon(icon);
+        AlternativeButton.IsVisible = true;
+        return this;
+    }
+
+    /// <summary>The second action was chosen (the dialog result is false then).</summary>
+    public bool AlternativeChosen { get; private set; }
+
+    private void OnAlternative(object? sender, RoutedEventArgs e)
+    {
+        AlternativeChosen = true;
+        Close(false);
+    }
+
     private void OnConfirm(object? sender, RoutedEventArgs e) => Close(true);
 
     private void OnCancel(object? sender, RoutedEventArgs e) => Close(false);

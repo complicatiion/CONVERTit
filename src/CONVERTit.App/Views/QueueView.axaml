@@ -141,7 +141,7 @@
                           Command="{Binding $parent[UserControl].DataContext.ShowOutputCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipShowInExplorer}">
                     <PathIcon Data="{StaticResource IconFolderOpen}" />
                   </Button>
-                  <Button Classes="icon small" IsVisible="{Binding IsFinished}"
+                  <Button Classes="icon small close" IsVisible="{Binding IsFinished}"
                           Command="{Binding $parent[UserControl].DataContext.RemoveCommand}" CommandParameter="{Binding}" ToolTip.Tip="{DynamicResource TipRemove}">
                     <PathIcon Data="{StaticResource IconClose}" />
                   </Button>

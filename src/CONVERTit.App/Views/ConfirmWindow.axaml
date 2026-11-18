@@ -18,6 +18,10 @@
         <Button Click="OnCancel" IsCancel="True" Classes="fixed">
           <ctl:IconLabel Icon="{StaticResource IconClose}" Text="{DynamicResource BtnCancel}" />
         </Button>
+        <!-- Optional second action (e.g. "Cancel jobs and exit"), between Cancel and the main action -->
+        <Button x:Name="AlternativeButton" Click="OnAlternative" Classes="danger fixed" IsVisible="False">
+          <ctl:IconLabel x:Name="AlternativeLabel" Icon="{StaticResource IconClose}" />
+        </Button>
         <Button x:Name="ConfirmButton" Click="OnConfirm" Classes="primary fixed" IsDefault="True">
           <ctl:IconLabel x:Name="ConfirmLabel" Icon="{StaticResource IconCheck}" />
         </Button>

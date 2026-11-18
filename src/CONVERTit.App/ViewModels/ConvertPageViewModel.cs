@@ -18,7 +18,7 @@ public abstract partial class ConvertPageViewModel : PageViewModel
         string? miniPlayerKey = null)
         : base(main)
     {
-        Sources = new SourceListViewModel(main, kinds, folderKind, singleFile) { MiniPlayerKey = miniPlayerKey };
+        Sources = new SourceListViewModel(main, kinds, folderKind, singleFile) { MiniPlayerKey = miniPlayerKey, Owner = this };
         Output = new OutputViewModel(main);
         Sources.ExcludedFolders = root => Output.ExcludedFolders(root);
         Sources.Changed += () =>
@@ -26,12 +26,14 @@ public abstract partial class ConvertPageViewModel : PageViewModel
             UpdateEstimate();
             StartCommand.NotifyCanExecuteChanged();
             StartSelectedCommand.NotifyCanExecuteChanged();
+            ConvertNowCommand.NotifyCanExecuteChanged();
         };
         Sources.SelectionSetChanged += () => StartSelectedCommand.NotifyCanExecuteChanged();
         main.FfmpegChanged += () =>
         {
             OnPropertyChanged(nameof(ShowFfmpegBanner));
             StartCommand.NotifyCanExecuteChanged();
+            ConvertNowCommand.NotifyCanExecuteChanged();
         };
     }
 
@@ -47,7 +49,11 @@ public abstract partial class ConvertPageViewModel : PageViewModel
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     [NotifyCanExecuteChangedFor(nameof(StartSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConvertNowCommand))]
     private bool _isPlanning;
+
+    /// <summary>"Convert" button in the footer: start right away and show progress in the list rows (Quick Convert).</summary>
+    public virtual bool ShowConvertNow => false;
 
     [ObservableProperty] private string _estimateText = "";
 
@@ -87,7 +93,59 @@ public abstract partial class ConvertPageViewModel : PageViewModel
         }
     }
 
+    /// <summary>
+    /// Quick Convert: converts right away and stays on the page; every row shows its progress and, when done, a
+    /// button that shows the result in Explorer. The jobs run in the normal queue.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanStart))]
+    private async Task ConvertNowAsync()
+    {
+        IsPlanning = true;
+        try
+        {
+            var jobs = await PlanAsync();
+            if (jobs.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var job in jobs)
+            {
+                Sources.Items.FirstOrDefault(i => string.Equals(i.Path, job.SourcePath, StringComparison.OrdinalIgnoreCase))?.Track(job);
+            }
+
+            Main.Queue.Enqueue(jobs);
+            Main.ShowToast(Loc.F("ToastConverting", jobs.Count));
+            Main.SaveState();
+        }
+        catch (ConversionException ex)
+        {
+            Main.ShowToast(Loc.F(ex.Key, ex.Arguments), error: true);
+        }
+        catch (Exception ex)
+        {
+            Main.ShowToast(ex.Message, error: true);
+        }
+        finally
+        {
+            IsPlanning = false;
+        }
+    }
+
     private bool CanStartSelected() => CanStart() && Sources.HasPartialSelection;
+
+    /// <summary>Right-click "Convert only these": the selected rows, or all when everything is selected.</summary>
+    public void QueueSelection()
+    {
+        if (StartSelectedCommand.CanExecute(null))
+        {
+            StartSelectedCommand.Execute(null);
+        }
+        else if (StartCommand.CanExecute(null))
+        {
+            StartCommand.Execute(null);
+        }
+    }
 
     /// <summary>
     /// Only the selected files, with the current settings; they leave the list afterwards, so the remaining files

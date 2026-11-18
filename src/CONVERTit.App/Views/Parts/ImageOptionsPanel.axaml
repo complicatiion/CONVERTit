@@ -17,8 +17,11 @@
 
           <TextBlock Grid.Row="1" Text="{DynamicResource LblQuality}" IsVisible="{Binding ShowQuality}" />
           <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,70" IsVisible="{Binding ShowQuality}">
-            <Slider Minimum="1" Maximum="100" Value="{Binding Options.Quality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="1" Maximum="100" Value="{Binding Options.Quality}" FormatString="0" ShowButtonSpinner="False" />
+            <!-- JPEG has its own quality (default 95), WebP/AVIF share the other one -->
+            <Slider Minimum="1" Maximum="100" Value="{Binding Options.JpegQuality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" IsVisible="{Binding IsJpeg}" />
+            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="1" Maximum="100" Value="{Binding Options.JpegQuality}" FormatString="0" ShowButtonSpinner="False" IsVisible="{Binding IsJpeg}" />
+            <Slider Minimum="1" Maximum="100" Value="{Binding Options.Quality}" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" IsVisible="{Binding !IsJpeg}" />
+            <NumericUpDown Grid.Column="1" Margin="8,0,0,0" Minimum="1" Maximum="100" Value="{Binding Options.Quality}" FormatString="0" ShowButtonSpinner="False" IsVisible="{Binding !IsJpeg}" />
           </Grid>
 
           <!-- PNG -->

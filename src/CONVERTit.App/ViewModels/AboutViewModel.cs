@@ -20,7 +20,12 @@ public sealed partial class AboutViewModel(MainViewModel main) : PageViewModel(m
 
     public string Copyright => "Copyright © 2026 Sven Klocke · sksdesign | complicatiion";
 
-    public IReadOnlyList<ThirdPartyItem> ThirdParty { get; } =
+    /// <summary>
+    /// Sorted by the width of the row text – name and license together – shortest on top, widest at the bottom;
+    /// ties by the license width, then alphabetically. All texts use the same font, so the character count stands
+    /// for the width.
+    /// </summary>
+    public IReadOnlyList<ThirdPartyItem> ThirdParty { get; } = SortByWidth(
     [
         new("FFmpeg", "download", "LGPL-2.1+ / GPL-3.0 (build)", "UsageFfmpeg", "https://ffmpeg.org", "third-party/FFMPEG.md"),
         new("ImageMagick · Magick.NET", "14.x", "ImageMagick License · Apache-2.0", "UsageMagick", "https://github.com/dlemstra/Magick.NET", "third-party/MAGICK-NET.md"),
@@ -31,8 +36,15 @@ public sealed partial class AboutViewModel(MainViewModel main) : PageViewModel(m
         new("SkiaSharp / HarfBuzzSharp", "–", "MIT · BSD-3-Clause", "UsageSkia", "https://github.com/mono/SkiaSharp", "third-party/SKIASHARP.md"),
         new("CommunityToolkit.Mvvm", "8.4", "MIT", "UsageMvvm", "https://github.com/CommunityToolkit/dotnet", "third-party/COMMUNITYTOOLKIT-MVVM.md"),
         new("Material Design Icons", "7.4", "Apache-2.0", "UsageIcons", "https://pictogrammers.com/library/mdi/", "third-party/MATERIAL-DESIGN-ICONS.md"),
-        new("Inter", "4.x", "SIL OFL 1.1", "UsageFont", "https://rsms.me/inter/", "third-party/INTER-FONT.md")
-    ];
+        new("Inter", "4.x", "SIL OFL 1.1", "UsageFont", "https://rsms.me/inter/", "third-party/INTER-FONT.md"),
+        new("Real-ESRGAN", "optional", "BSD-3-Clause", "UsageRealEsrgan", "https://github.com/xinntao/Real-ESRGAN", "third-party/OPTIONAL-MODULES.md"),
+        new("waifu2x", "optional", "MIT", "UsageWaifu2x", "https://github.com/nihui/waifu2x-ncnn-vulkan", "third-party/OPTIONAL-MODULES.md"),
+        new("RIFE", "optional", "MIT", "UsageRife", "https://github.com/nihui/rife-ncnn-vulkan", "third-party/OPTIONAL-MODULES.md"),
+        new("ncnn", "optional", "BSD-3-Clause", "UsageNcnn", "https://github.com/Tencent/ncnn", "third-party/OPTIONAL-MODULES.md")
+    ]);
+
+    public static List<ThirdPartyItem> SortByWidth(IEnumerable<ThirdPartyItem> items) =>
+        items.OrderBy(i => i.Name.Length + i.License.Length).ThenBy(i => i.License.Length).ThenBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
     [RelayCommand]
     private void OpenProject() => AppEnvironment.OpenUrl(AppEnvironment.ProjectUrl);

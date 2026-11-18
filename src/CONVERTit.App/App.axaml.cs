@@ -15,7 +15,11 @@ public partial class App : Application
 {
     private MainWindow? _mainWindow;
     private MainViewModel? _viewModel;
+    private TrayService? _tray;
+    private IClassicDesktopStyleApplicationLifetime? _desktop;
     private bool _ready;
+    private bool _windowHidden;
+    private bool _exiting;
 
     public override void Initialize()
     {
@@ -24,6 +28,8 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Middle-click scrolling (browser style) in every ScrollViewer.
+        CONVERTit.App.Controls.AutoScroll.Install();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var settings = AppSettings.Load();
@@ -40,14 +46,39 @@ public partial class App : Application
             _viewModel = new MainViewModel(settings, host);
             _viewModel.ApplyTheme(settings.Theme);
             _viewModel.ShowWindowRequested += ShowMainWindow;
+            _viewModel.HideToTrayRequested += HideToTray;
+            _viewModel.ExitRequested += Exit;
+            _viewModel.IsWindowHidden = () => _windowHidden;
 
+            _desktop = desktop;
+            // The app ends explicitly (window closed without tray, tray menu Exit, background jobs done).
+            desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             _mainWindow = new MainWindow { DataContext = _viewModel };
             host.MainWindow = _mainWindow;
-            desktop.MainWindow = _mainWindow;
+            _mainWindow.Closed += (_, _) => Shutdown();
+            _mainWindow.Opened += (_, _) => _viewModel.OnWindowShown();
+            _tray = new TrayService(_viewModel, ShowMainWindow, Exit);
+
+            // Start hidden: started with Windows (Settings › Start in notification area) or only for an Explorer
+            // background job ("Convert to MP3" …). Everything else opens the window as usual.
+            var hidden = (Program.StartedFromAutostart && settings.StartInTray)
+                || (settings.BackgroundExplorerJobs && MainViewModel.IsBackgroundAction(Program.StartAction));
+            if (hidden)
+            {
+                _windowHidden = true;
+                _tray.WindowHidden = true;
+                _viewModel.ExitWhenDrained = !Program.StartedFromAutostart && settings.ExitAfterBackgroundJobs;
+            }
+            else
+            {
+                // The lifetime shows the main window when it starts.
+                desktop.MainWindow = _mainWindow;
+            }
 
             desktop.ShutdownRequested += (_, _) => _viewModel.SaveState();
             desktop.Exit += (_, _) =>
             {
+                _tray?.Dispose();
                 _viewModel.SaveState();
                 _viewModel.Dispose();
             };
@@ -56,6 +87,18 @@ public partial class App : Application
             {
                 Platform.Windows.Notifications.Register("CONVERTit", AppEnvironment.NotificationIconPath, AppEnvironment.ExecutablePath);
                 ExplorerIntegration.Refresh(settings);
+                // File associations follow the program path (after updates or a moved portable folder).
+                if (settings.Associations != AssociationMode.Off)
+                {
+                    try
+                    {
+                        FileAssociationService.Apply(settings);
+                    }
+                    catch
+                    {
+                        // Registry not writable: keep what is there.
+                    }
+                }
             }
 
             StartShowSignalListener();
@@ -82,16 +125,17 @@ public partial class App : Application
             return;
         }
 
-        var any = false;
         while (Program.Requests.TryDequeue(out var request))
         {
-            any = true;
-            _viewModel.QueueExternal(request.Action, request.Files);
-        }
+            if (request.Files.Length == 0)
+            {
+                // A second start without files: bring the window back.
+                ShowMainWindow();
+                continue;
+            }
 
-        if (any)
-        {
-            ShowMainWindow();
+            // The view model decides whether the window is needed (background actions stay in the tray).
+            _viewModel.QueueExternal(request.Action, request.Files);
         }
     }
 
@@ -119,18 +163,90 @@ public partial class App : Application
 
     private void ShowMainWindow()
     {
-        if (_mainWindow is null)
+        if (_mainWindow is null || _exiting)
         {
             return;
         }
 
-        if (_mainWindow.WindowState == WindowState.Minimized)
+        if (_desktop is not null && _desktop.MainWindow is null)
         {
-            _mainWindow.WindowState = WindowState.Normal;
+            _desktop.MainWindow = _mainWindow;
         }
 
         _mainWindow.Show();
+        if (_mainWindow.WindowState == WindowState.Minimized)
+        {
+            _mainWindow.RestoreFromMinimized();
+        }
+
         _mainWindow.Activate();
+        _windowHidden = false;
+        if (_tray is not null)
+        {
+            _tray.WindowHidden = false;
+        }
+
+        _viewModel?.OnWindowShown();
+    }
+
+    /// <summary>Window → notification area (close/minimize to tray, "continue in background").</summary>
+    private void HideToTray()
+    {
+        if (_mainWindow is null || _viewModel is null)
+        {
+            return;
+        }
+
+        _windowHidden = true;
+        if (_tray is not null)
+        {
+            _tray.WindowHidden = true;
+        }
+
+        _mainWindow.Hide();
+        if (!_viewModel.Settings.TrayHintShown)
+        {
+            // Once: say where CONVERTit went.
+            _viewModel.Settings.TrayHintShown = true;
+            _viewModel.Settings.Save();
+            _viewModel.ShowSystemNotification("CONVERTit", Loc.T("NotifyTrayHint"), null);
+        }
+    }
+
+    /// <summary>Tray menu "Exit" or background jobs done: running jobs are confirmed in the window first.</summary>
+    private void Exit()
+    {
+        if (_mainWindow is null || _viewModel is null)
+        {
+            Shutdown();
+            return;
+        }
+
+        if (_viewModel.Queue.IsBusy)
+        {
+            // Running jobs: the window asks first (exit anyway or cancel).
+            ShowMainWindow();
+            _mainWindow.CloseForExit();
+            return;
+        }
+
+        Shutdown();
+    }
+
+    private void Shutdown()
+    {
+        if (_exiting)
+        {
+            return;
+        }
+
+        _exiting = true;
+        if (_mainWindow is not null)
+        {
+            _mainWindow.ExitAllowed = true;
+        }
+
+        _desktop?.Shutdown();
     }
 
     /// <summary>A second app start without a reachable pipe signals "show window".</summary>

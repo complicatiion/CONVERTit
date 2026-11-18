@@ -8,7 +8,9 @@ using CommunityToolkit.Mvvm.Input;
 using CONVERTit.App.Localization;
 using CONVERTit.App.Services;
 using CONVERTit.Core.Catalog;
+using CONVERTit.Core.Ffmpeg;
 using CONVERTit.Core.Jobs;
+using CONVERTit.Core.Machine;
 using CONVERTit.Core.Media;
 using CONVERTit.Core.Options;
 using CONVERTit.Core.Storage;
@@ -74,20 +76,54 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Host = host;
 
         // ------------------------------------------------------------ Services
-        Locator = new FfmpegLocator(AppEnvironment.FfmpegDirectory, () => Settings.FfmpegPath);
+        Locator = new FfmpegLocator(AppEnvironment.FfmpegDirectory, () => Settings.FfmpegPath, AppEnvironment.FfmpegSharedDirectories,
+            AppEnvironment.LegacyFfmpegDirectory);
+        Modules = new ModuleLocator(AppEnvironment.ModulesDirectory, AppEnvironment.SharedModulesDirectory,
+            id => Settings.ModuleFolders.TryGetValue(id.ToString(), out var folder) ? folder : null);
         Runner = new FfmpegRunner(Locator);
         Probe = new MediaProbe(new FfprobeService(Runner));
-        Conversion = new ConversionService(Runner, Probe);
+        Thumbnails = new ThumbnailService(Runner, Locator);
+        _ = Task.Run(ThumbnailService.TrimCache);
+        // Opt-in update check: at most once a day, quietly (a toast only when a new version exists).
+        if (Settings.CheckForUpdates && (Settings.LastUpdateCheck is not { } last || DateTime.UtcNow - last > TimeSpan.FromHours(20)))
+        {
+            Dispatcher.UIThread.Post(() => _ = SettingsPage.CheckUpdatesNowCoreAsync(quiet: true), DispatcherPriority.Background);
+        }
+        Conversion = new ConversionService(Runner, Probe) { Modules = Modules };
+        Modules.Changed += () => Dispatcher.UIThread.Post(() =>
+        {
+            OnPropertyChanged(nameof(ModulesReady));
+            OnPropertyChanged(nameof(FfmpegPillText));
+            OnPropertyChanged(nameof(FfmpegPillTip));
+        });
         Player = new PlayerService();
-        Player.WarmUp();
+        // LibVLC is warmed up when the window is shown first (a start in the notification area stays light).
         AudioPreview = new AudioPreview(Player);
+        Machine = new SystemMonitor();
+        Machine.Changed += OnMachineChanged;
+        Conversion.EncodeSettings = () => _encode;
         Queue = new JobQueue(action => Dispatcher.UIThread.Post(action));
         Queue.Changed += OnQueueChanged;
         Queue.Drained += OnQueueDrained;
         if (OperatingSystem.IsWindows())
         {
             var job = TryCreateJobObject();
-            Runner.ProcessStarted = process => job?.Assign(process);
+            ModuleRunner.ProcessStarted = process =>
+            {
+                job?.Assign(process);
+                if (_ecoQos)
+                {
+                    Platform.Windows.ProcessPower.SetEcoQos(process, true);
+                }
+            };
+            Runner.ProcessStarted = process =>
+            {
+                job?.Assign(process);
+                if (_ecoQos)
+                {
+                    Platform.Windows.ProcessPower.SetEcoQos(process, true);
+                }
+            };
         }
 
         // ------------------------------------------------------------ Pages
@@ -106,6 +142,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ImageResize = new ImageConvertViewModel(this, resizeOnly: true);
         GameTextures = new GameTextureViewModel(this);
         IconPage = new IconViewModel(this);
+        AppIcons = new AppIconsViewModel(this);
+        Sprites = new SpritesViewModel(this);
+        GodotVideo = new GodotVideoViewModel(this);
+        Upscale = new UpscaleViewModel(this);
+        Denoise = new DenoiseViewModel(this);
+        Interpolate = new InterpolateViewModel(this);
+        Thumbcache = new ThumbcacheViewModel(this);
         QueuePage = new QueueViewModel(this);
         Dependencies = new DependenciesViewModel(this);
         SettingsPage = new SettingsViewModel(this);
@@ -114,20 +157,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // ------------------------------------------------------------ Navigation
         _quickNav = new NavItem(QuickConvert);
         _compressNav = new NavItem(Compress);
-        _queueNav = new NavItem(QueuePage);
+        _queueNav = new NavItem(QueuePage) { IsAccent = true };
         VideoGroup = new NavGroup(this, "video", "NavVideo", "IconVideo",
-            [new NavItem(VideoConvert), new NavItem(VideoTrim), new NavItem(Animation), new NavItem(Remux), new NavItem(ExtractAudio)]);
+            [new NavItem(VideoConvert), new NavItem(VideoTrim), new NavItem(Animation), new NavItem(Remux), new NavItem(ExtractAudio), new NavItem(GodotVideo)]);
         AudioGroup = new NavGroup(this, "audio", "NavAudio", "IconAudio",
             [new NavItem(AudioConvert), new NavItem(AudioTrim), new NavItem(Tags), new NavItem(GameAudio)]);
         ImageGroup = new NavGroup(this, "image", "NavImage", "IconImage",
-            [new NavItem(ImageConvert), new NavItem(ImageResize), new NavItem(GameTextures), new NavItem(IconPage)]);
-        // Video, Audio and Image always start expanded; collapsing only lasts for the session.
+            [new NavItem(ImageConvert), new NavItem(ImageResize), new NavItem(GameTextures), new NavItem(IconPage), new NavItem(AppIcons), new NavItem(Sprites)]);
+        ToolsGroup = new NavGroup(this, "tools", "NavTools", "IconSparkle",
+            [new NavItem(Upscale), new NavItem(Denoise), new NavItem(Interpolate), new NavItem(Thumbcache)]);
+        // All groups start expanded with the full sidebar (collapsed in the narrow rail); collapsing only lasts for the session.
         foreach (var group in Groups)
         {
-            group.IsExpanded = true;
+            group.IsExpanded = !Settings.SidebarCollapsed;
         }
 
-        TopNav = [_quickNav, _compressNav, new NavDivider(), VideoGroup, AudioGroup, ImageGroup, new NavDivider(), _queueNav];
+        TopNav = [_quickNav, _compressNav, new NavDivider(), VideoGroup, AudioGroup, ImageGroup, ToolsGroup, new NavDivider(), _queueNav];
         BottomNav = [new NavItem(Dependencies), new NavItem(SettingsPage), new NavItem(About)];
         _isSidebarCollapsed = Settings.SidebarCollapsed;
 
@@ -144,8 +189,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _externalTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
         _externalTimer.Tick += (_, _) => FlushExternal();
 
+        _pillTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _pillTimer.Tick += (_, _) => FfmpegPillExpanded = false;
+        _exitTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _exitTimer.Tick += (_, _) =>
+        {
+            _exitTimer.Stop();
+            ExitRequested?.Invoke();
+        };
+
+        HideHints = !Settings.ShowHints;
         ApplyRuntimeSettings();
         Navigate(_quickNav);
+        Machine.Start();
     }
 
     // ================================================================ Services
@@ -156,9 +212,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public FfmpegLocator Locator { get; }
 
+    /// <summary>Optional modules (upscalers, frame interpolation).</summary>
+    public ModuleLocator Modules { get; }
+
     public FfmpegRunner Runner { get; }
 
     public MediaProbe Probe { get; }
+
+    /// <summary>Small previews in the file lists (Settings › General › Thumbnails in lists).</summary>
+    public ThumbnailService Thumbnails { get; }
 
     public ConversionService Conversion { get; }
 
@@ -168,6 +230,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public AudioPreview AudioPreview { get; }
 
     public JobQueue Queue { get; }
+
+    /// <summary>Settings › General › Show hints off: all "i" hints collapse.</summary>
+    [ObservableProperty] private bool _hideHints;
+
+    /// <summary>System detection (CPU, memory, GPUs, power source) for the performance profiles.</summary>
+    public SystemMonitor Machine { get; }
+
+    /// <summary>Resource values of the current performance profile.</summary>
+    public ResourcePlan Plan { get; private set; } = null!;
+
+    private EncodeEnvironment _encode = EncodeEnvironment.Default;
+    private volatile bool _ecoQos;
+    private bool _pausedForBattery;
 
     public string FfmpegVersion { get; private set; } = "";
 
@@ -186,8 +261,35 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Bring the window to the front (Explorer actions).</summary>
     public event Action? ShowWindowRequested;
 
+    /// <summary>Hide the window to the notification area (close/minimize to tray, "continue in background").</summary>
+    public event Action? HideToTrayRequested;
+
+    /// <summary>Exit the app (tray menu, background jobs done).</summary>
+    public event Action? ExitRequested;
+
+    /// <summary>Queue, profile or language changed: the tray icon updates its menu and tooltip.</summary>
+    public event Action? TrayStateChanged;
+
     /// <summary>Set by the window: true while it is in the foreground.</summary>
     public Func<bool> IsWindowActive { get; set; } = () => true;
+
+    /// <summary>Set by the app: true while the window is hidden in the notification area (or was never shown).</summary>
+    public Func<bool> IsWindowHidden { get; set; } = () => false;
+
+    /// <summary>CONVERTit was started only for Explorer background jobs: exit when they are done.</summary>
+    public bool ExitWhenDrained { get; set; }
+
+    public void HideToTray() => HideToTrayRequested?.Invoke();
+
+    public void RequestExit() => ExitRequested?.Invoke();
+
+    /// <summary>The window became visible: no automatic exit any more.</summary>
+    public void OnWindowShown()
+    {
+        ExitWhenDrained = false;
+        _exitTimer.Stop();
+        Player.WarmUp();
+    }
 
     // ================================================================ Pages
 
@@ -206,16 +308,33 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public ImageConvertViewModel ImageResize { get; }
     public GameTextureViewModel GameTextures { get; }
     public IconViewModel IconPage { get; }
+    public AppIconsViewModel AppIcons { get; }
+    public SpritesViewModel Sprites { get; }
+    public GodotVideoViewModel GodotVideo { get; }
+    public UpscaleViewModel Upscale { get; }
+    public DenoiseViewModel Denoise { get; }
+    public InterpolateViewModel Interpolate { get; }
+    public ThumbcacheViewModel Thumbcache { get; }
     public QueueViewModel QueuePage { get; }
     public DependenciesViewModel Dependencies { get; }
     public SettingsViewModel SettingsPage { get; }
     public AboutViewModel About { get; }
 
-    private IEnumerable<PageViewModel> AllPages =>
+    /// <summary>All pages in sidebar order (Ctrl+↑/↓ walks through them).</summary>
+    private IReadOnlyList<PageViewModel> AllPages =>
     [
-        QuickConvert, Compress, VideoConvert, VideoTrim, Animation, Remux, ExtractAudio, AudioConvert, AudioTrim, Tags, GameAudio,
-        ImageConvert, ImageResize, GameTextures, IconPage, QueuePage, Dependencies, SettingsPage, About
+        QuickConvert, Compress, VideoConvert, VideoTrim, Animation, Remux, ExtractAudio, GodotVideo, AudioConvert, AudioTrim, Tags, GameAudio,
+        ImageConvert, ImageResize, GameTextures, IconPage, AppIcons, Sprites, Upscale, Denoise, Interpolate, Thumbcache,
+        QueuePage, Dependencies, SettingsPage, About
     ];
+
+    /// <summary>Keyboard: previous/next page in sidebar order.</summary>
+    public void NavigateRelative(int delta)
+    {
+        var pages = AllPages;
+        var index = CurrentPage is null ? 0 : Math.Max(0, pages.ToList().IndexOf(CurrentPage));
+        NavigateTo(pages[(index + delta + pages.Count) % pages.Count]);
+    }
 
     // ================================================================ Navigation
 
@@ -225,9 +344,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public NavGroup VideoGroup { get; }
     public NavGroup AudioGroup { get; }
+    public NavGroup ToolsGroup { get; }
     public NavGroup ImageGroup { get; }
 
-    private NavGroup[] Groups => [VideoGroup, AudioGroup, ImageGroup];
+    private NavGroup[] Groups => [VideoGroup, AudioGroup, ImageGroup, ToolsGroup];
 
     /// <summary>Quick Convert, Compress, the three groups and the queue (with dividers).</summary>
     public IReadOnlyList<object> TopNav { get; }
@@ -286,14 +406,79 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             }
         }
 
-        // Leaving a page ends the mini player.
+        // Collapsed sidebar: the group of the page unfolds (accordion closes the others).
+        if (IsSidebarCollapsed)
+        {
+            foreach (var group in Groups.Where(g => g.ContainsSelection && !g.IsRailExpanded))
+            {
+                ToggleRailGroup(group);
+            }
+        }
+
         if (!ReferenceEquals(CurrentPage, item.Page))
         {
+            // Leaving a page ends the mini player.
             AudioPreview.Stop();
+
+            // History like a browser: back/forward entries; a new page clears the forward list.
+            if (!_historyMove && CurrentPage is not null)
+            {
+                _back.Add(CurrentPage);
+                if (_back.Count > HistoryLimit)
+                {
+                    _back.RemoveAt(0);
+                }
+
+                _forward.Clear();
+            }
         }
 
         CurrentPage = item.Page;
         item.Page.OnActivated();
+        GoBackCommand.NotifyCanExecuteChanged();
+        GoForwardCommand.NotifyCanExecuteChanged();
+    }
+
+    private const int HistoryLimit = 50;
+    private readonly List<PageViewModel> _back = [];
+    private readonly List<PageViewModel> _forward = [];
+    private bool _historyMove;
+
+    private bool CanGoBack() => _back.Count > 0;
+
+    private bool CanGoForward() => _forward.Count > 0;
+
+    /// <summary>Back to the previous page (header arrow, mouse back button, Alt+Left).</summary>
+    [RelayCommand(CanExecute = nameof(CanGoBack))]
+    private void GoBack() => MoveInHistory(_back, _forward);
+
+    /// <summary>Forward again (header arrow, mouse forward button, Alt+Right).</summary>
+    [RelayCommand(CanExecute = nameof(CanGoForward))]
+    private void GoForward() => MoveInHistory(_forward, _back);
+
+    private void MoveInHistory(List<PageViewModel> from, List<PageViewModel> to)
+    {
+        if (from.Count == 0)
+        {
+            return;
+        }
+
+        var page = from[^1];
+        from.RemoveAt(from.Count - 1);
+        if (CurrentPage is not null)
+        {
+            to.Add(CurrentPage);
+        }
+
+        _historyMove = true;
+        try
+        {
+            NavigateTo(page);
+        }
+        finally
+        {
+            _historyMove = false;
+        }
     }
 
     public void NavigateTo(PageViewModel page)
@@ -344,18 +529,47 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenDependenciesPage() => NavigateTo(Dependencies);
 
-    /// <summary>Header pill: installed → dependencies page, missing → setup dialog.</summary>
+    /// <summary>
+    /// Header pill: installed → first click unfolds the version, second click opens the dependencies page;
+    /// missing → always unfolded, opens the setup dialog.
+    /// </summary>
     [RelayCommand]
     private void FfmpegPill()
     {
-        if (Locator.IsAvailable)
-        {
-            NavigateTo(Dependencies);
-        }
-        else
+        if (!Locator.IsAvailable)
         {
             OpenFfmpegSetup();
+            return;
         }
+
+        if (!FfmpegPillExpanded)
+        {
+            FfmpegPillExpanded = true;
+            _pillTimer.Stop();
+            _pillTimer.Start();
+            return;
+        }
+
+        FfmpegPillExpanded = false;
+        NavigateTo(Dependencies);
+    }
+
+    private readonly DispatcherTimer _pillTimer;
+    private readonly DispatcherTimer _exitTimer;
+
+    /// <summary>The installed pill shows its text (after a click, for a few seconds).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowFfmpegPillText))]
+    private bool _ffmpegPillExpanded;
+
+    /// <summary>Text visible: unfolded, or FFmpeg is missing (the user should act).</summary>
+    public bool ShowFfmpegPillText => !Locator.IsAvailable || FfmpegPillExpanded;
+
+    /// <summary>Click somewhere else: fold the pill again.</summary>
+    public void CollapseFfmpegPill()
+    {
+        _pillTimer.Stop();
+        FfmpegPillExpanded = false;
     }
 
     /// <summary>"Download FFmpeg" buttons of the pages: the setup dialog asks for confirmation first.</summary>
@@ -430,13 +644,42 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public bool FfmpegReady => Locator.IsAvailable;
 
+    /// <summary>
+    /// Header status of all dependencies: FFmpeg and ffprobe are required (orange when missing), the optional modules
+    /// are counted ("modules 1/3").
+    /// </summary>
     public string FfmpegPillText => Locator.IsAvailable
-        ? "FFmpeg " + (FfmpegVersion.Length > 0 ? FfmpegVersion : "")
+        ? Loc.F("PillDependencies", FfmpegVersion.Length > 0 ? FfmpegVersion : "✓", ModulesReady, ModuleCatalog.Optional.Count)
         : Loc.T("PillFfmpegMissing");
 
-    public string FfmpegPillTip => Loc.T(Locator.IsAvailable ? "TipFfmpegInstalled" : "TipFfmpegMissing");
+    /// <summary>Number of installed optional modules.</summary>
+    public int ModulesReady => ModuleCatalog.Optional.Count(m => Modules.IsAvailable(m.Id));
 
-    [ObservableProperty] private bool _isTestingEncoders;
+    /// <summary>Tooltip: one line per dependency with ✓ / –.</summary>
+    public string FfmpegPillTip
+    {
+        get
+        {
+            static string Line(string name, bool ok, string extra = "") => $"{(ok ? "✓" : "–")}  {name}{(extra.Length > 0 ? " " + extra : "")}";
+            var lines = new List<string>
+            {
+                Loc.T("TipDependenciesHeader"),
+                Line("ffmpeg", Locator.FfmpegPath is not null, FfmpegVersion),
+                Line("ffprobe", Locator.FfprobePath is not null)
+            };
+            lines.AddRange(ModuleCatalog.Optional.Select(m => Line(m.Name, Modules.IsAvailable(m.Id))));
+            lines.Add("");
+            lines.Add(Loc.T(Locator.IsAvailable ? "TipFfmpegInstalled" : "TipFfmpegMissing"));
+            return string.Join(Environment.NewLine, lines);
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowEncoderTest))]
+    private bool _isTestingEncoders;
+
+    /// <summary>The encoder test is shown in the status slot when nothing else is running.</summary>
+    public bool ShowEncoderTest => IsTestingEncoders && !LineActive;
     [ObservableProperty] private bool _queueBusy;
     [ObservableProperty] private double _queueProgress;
     [ObservableProperty] private string _queueStatusText = "";
@@ -474,6 +717,37 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ActivityText = current is null ? "" : _activities.Count > 1 ? $"{current.Text} (+{_activities.Count - 1})" : current.Text;
         ActivityIndeterminate = current?.Progress is null;
         ActivityProgress = (current?.Progress ?? 0) * 100;
+        RaiseHeaderStatus();
+    }
+
+    // ================================================================ Header status slot and progress line
+
+    /// <summary>The line under the header works as progress bar: loading first, then the queue.</summary>
+    public bool LineActive => HasActivity || QueueBusy;
+
+    public bool LineIndeterminate => HasActivity ? ActivityIndeterminate : false;
+
+    public double LineValue => HasActivity ? ActivityProgress : QueueProgress;
+
+    /// <summary>Text of the fixed-width status slot (activity or queue).</summary>
+    public string HeaderStatusText => HasActivity
+        ? ActivityText
+        : QueueBusy ? $"{QueueStatusText} · {QueueProgress:0} %" + (Queue.IsPaused ? " · " + Loc.T("StatePaused") : "") : "";
+
+    /// <summary>The slot shows the queue (click opens it).</summary>
+    public bool HeaderStatusIsQueue => !HasActivity && QueueBusy;
+
+    public bool HeaderStatusIsActivity => HasActivity;
+
+    private void RaiseHeaderStatus()
+    {
+        OnPropertyChanged(nameof(LineActive));
+        OnPropertyChanged(nameof(LineIndeterminate));
+        OnPropertyChanged(nameof(LineValue));
+        OnPropertyChanged(nameof(HeaderStatusText));
+        OnPropertyChanged(nameof(HeaderStatusIsQueue));
+        OnPropertyChanged(nameof(HeaderStatusIsActivity));
+        OnPropertyChanged(nameof(ShowEncoderTest));
     }
 
     // ================================================================ Toast (in-app)
@@ -548,6 +822,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void RaiseFfmpeg()
     {
+        OnPropertyChanged(nameof(ModulesReady));
+        OnPropertyChanged(nameof(ShowFfmpegPillText));
         OnPropertyChanged(nameof(FfmpegReady));
         OnPropertyChanged(nameof(FfmpegPillText));
         OnPropertyChanged(nameof(FfmpegPillTip));
@@ -576,6 +852,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         RaiseFfmpeg();
         UpdateQueueStatus();
+        TrayStateChanged?.Invoke();
 
         // The Explorer menu carries translated labels.
         if (Settings.ExplorerMenu)
@@ -606,20 +883,141 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public void ApplyDisplayProfile() => DisplayProfileChanged?.Invoke();
 
-    /// <summary>Applies parallelism and priority to the queue and runner.</summary>
+    /// <summary>
+    /// Applies the performance profile: parallel jobs, priority, EcoQoS and encode settings. Running FFmpeg processes
+    /// get the new priority immediately; threads and GPU turbo apply to the next jobs.
+    /// </summary>
     public void ApplyRuntimeSettings()
     {
-        Queue.MediaParallel = Math.Clamp(Settings.MediaParallel, 1, 4);
-        Queue.ImageParallel = Math.Clamp(Settings.ImageParallel, 1, 16);
-        Runner.Priority = Settings.Priority switch
+        var customPriority = Settings.Priority switch
         {
-            PriorityOption.Normal => ProcessPriorityClass.Normal,
-            PriorityOption.Idle => ProcessPriorityClass.Idle,
+            PriorityOption.Normal => JobPriority.Normal,
+            PriorityOption.Idle => JobPriority.Idle,
+            _ => JobPriority.BelowNormal
+        };
+        Plan = PerformancePlanner.Plan(Settings.PerformanceProfile, Machine.Info, Settings.MediaParallel, Settings.ImageParallel, customPriority, true);
+
+        Queue.MediaParallel = Plan.MediaParallel;
+        Queue.ImageParallel = Plan.ImageParallel;
+        var priority = Plan.Priority switch
+        {
+            JobPriority.Normal => ProcessPriorityClass.Normal,
+            JobPriority.Idle => ProcessPriorityClass.Idle,
             _ => ProcessPriorityClass.BelowNormal
         };
+        var ecoChanged = _ecoQos != Plan.EcoQos;
+        _ecoQos = Plan.EcoQos;
+        if (Runner.Priority != priority || ecoChanged)
+        {
+            Runner.Priority = priority;
+            var eco = Plan.EcoQos;
+            Runner.ForEachRunning(process =>
+            {
+                FfmpegRunner.SetPriority(process, priority);
+                if (OperatingSystem.IsWindows())
+                {
+                    Platform.Windows.ProcessPower.SetEcoQos(process, eco);
+                }
+            });
+        }
+
+        _encode = new EncodeEnvironment
+        {
+            HardwareDecode = Settings.HardwareDecode,
+            GpuTurbo = Settings.GpuTurbo && Plan.GpuTurbo,
+            Threads = Plan.Threads,
+            HdrToSdr = Settings.HdrToSdr,
+            AutoDeinterlace = Settings.AutoDeinterlace
+        };
+
         Queue.Pump();
         EncodersChanged?.Invoke();
         UpdatePowerRequest(QueueBusy);
+        CheckBattery();
+        SettingsPage?.RefreshSystem();
+        TrayStateChanged?.Invoke();
+    }
+
+    /// <summary>Power source or hardware detection changed (Auto profile switches, battery pause).</summary>
+    private void OnMachineChanged() => ApplyRuntimeSettings();
+
+    /// <summary>Eco profile on battery: below 20 % the queue pauses (running jobs finish), on mains it continues.</summary>
+    private void CheckBattery()
+    {
+        var info = Machine.Info;
+        var low = Plan.PauseOnLowBattery && info.OnBattery && info.BatteryPercent is >= 0 and < PerformancePlanner.LowBatteryPercent;
+        if (low && !Queue.IsPaused && Queue.IsBusy)
+        {
+            Queue.IsPaused = true;
+            _pausedForBattery = true;
+            ShowToast(Loc.T("ToastPausedBattery"));
+        }
+        else if (!low && _pausedForBattery)
+        {
+            _pausedForBattery = false;
+            Queue.IsPaused = false;
+            ShowToast(Loc.T("ToastResumedBattery"));
+        }
+    }
+
+    // ================================================================ Tray menu commands
+
+    /// <summary>Pause/continue the queue (running jobs finish).</summary>
+    [RelayCommand]
+    private void TogglePause()
+    {
+        _pausedForBattery = false;
+        Queue.IsPaused = !Queue.IsPaused;
+        UpdateQueueStatus();
+    }
+
+    [RelayCommand]
+    private void CancelAllJobs()
+    {
+        Queue.CancelAll();
+        Queue.IsPaused = false;
+        UpdateQueueStatus();
+    }
+
+    /// <summary>Pages a file can be sent to from a list's right-click menu (all kinds of the selection must fit).</summary>
+    public IReadOnlyList<PageViewModel> SendTargets(IReadOnlyCollection<MediaKind> kinds)
+    {
+        IEnumerable<PageViewModel> For(MediaKind kind) => kind switch
+        {
+            MediaKind.Video => [VideoConvert, VideoTrim, Compress, Animation, Remux, ExtractAudio, GodotVideo, Upscale, Denoise, Interpolate, Sprites],
+            MediaKind.Audio => [AudioConvert, AudioTrim, Tags, GameAudio, Compress, Denoise],
+            MediaKind.Image => [ImageConvert, ImageResize, Compress, GameTextures, IconPage, AppIcons, Sprites, Upscale],
+            _ => []
+        };
+
+        if (kinds.Count == 0)
+        {
+            return [];
+        }
+
+        var result = For(kinds.First()).ToList();
+        foreach (var kind in kinds.Skip(1))
+        {
+            result = result.Intersect(For(kind)).ToList();
+        }
+
+        return result;
+    }
+
+    /// <summary>Opens a page and hands it the files (like dropping them there).</summary>
+    public void SendTo(PageViewModel page, IReadOnlyList<string> paths)
+    {
+        NavigateTo(page);
+        if (!page.AcceptDrop(paths))
+        {
+            ShowToast(Loc.T("ToastUnsupportedDrop"), error: true);
+        }
+    }
+
+    /// <summary>Tray submenu: switch the performance profile.</summary>
+    public void SetPerformanceProfile(PerformanceProfile profile)
+    {
+        SettingsPage.PerformanceProfile = profile;
     }
 
     public void SaveState()
@@ -665,15 +1063,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _externalTimer.Stop();
         var batches = _external.ToList();
         _external.Clear();
+        var needsWindow = false;
         foreach (var (action, files) in batches)
         {
-            RunExternal(action, files);
+            needsWindow |= RunExternal(action, files);
         }
 
-        ShowWindowRequested?.Invoke();
+        if (needsWindow)
+        {
+            ShowWindowRequested?.Invoke();
+        }
     }
 
-    private void RunExternal(string action, List<string> files)
+    /// <summary>Direct Explorer actions (convert, extract) that can run without the window.</summary>
+    public static bool IsBackgroundAction(string? action) => action is ExplorerIntegration.VideoMp4 or ExplorerIntegration.ExtractAudio
+        or ExplorerIntegration.AudioMp3 or ExplorerIntegration.AudioOgg
+        or ExplorerIntegration.ImagePng or ExplorerIntegration.ImageJpg or ExplorerIntegration.ImageWebp or ExplorerIntegration.IcoExtract;
+
+    /// <summary>Runs one Explorer request; returns true when the window has to be shown.</summary>
+    private bool RunExternal(string action, List<string> files)
     {
         List<SourceRef> Of(MediaKind kind) =>
             files.Where(f => File.Exists(f) && MediaTypes.Detect(f) == kind).Select(f => new SourceRef(f, null)).ToList();
@@ -687,6 +1095,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             OpenFfmpegSetup();
         }
 
+        // Settings › Background: direct actions run without bringing the window to the front.
+        var background = Settings.BackgroundExplorerJobs && IsBackgroundAction(action);
+        _externalInBackground = background;
+
         try
         {
             switch (action)
@@ -694,11 +1106,33 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 case ExplorerIntegration.Compress:
                     NavigateTo(Compress);
                     _ = Compress.Sources.AddPathsAsync(files);
-                    return;
+                    return true;
                 case ExplorerIntegration.EditTags:
                     NavigateTo(Tags);
                     _ = Tags.Sources.AddPathsAsync(files);
-                    return;
+                    return true;
+                case ExplorerIntegration.VideoTrim or ExplorerIntegration.AudioTrim or ExplorerIntegration.VideoGif
+                    or ExplorerIntegration.Remux or ExplorerIntegration.ImageResize or ExplorerIntegration.MakeIcon
+                    or ExplorerIntegration.MakeAppIcon or ExplorerIntegration.Thumbcache:
+                {
+                    // Explorer actions that need settings: open the page with the files.
+                    PageViewModel page = action switch
+                    {
+                        ExplorerIntegration.VideoTrim => VideoTrim,
+                        ExplorerIntegration.AudioTrim => AudioTrim,
+                        ExplorerIntegration.VideoGif => Animation,
+                        ExplorerIntegration.Remux => Remux,
+                        ExplorerIntegration.ImageResize => ImageResize,
+                        ExplorerIntegration.MakeIcon => IconPage,
+                        ExplorerIntegration.MakeAppIcon => AppIcons,
+                        _ => Thumbcache
+                    };
+                    SendTo(page, files);
+                    return true;
+                }
+                case ExplorerIntegration.IcoExtract:
+                    _ = ExtractIconsAsync(files.Where(File.Exists).ToList());
+                    return !background;
                 case ExplorerIntegration.VideoMp4:
                 {
                     var options = JsonFile.Clone(VideoConvert.Video.Options);
@@ -709,11 +1143,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     }
 
                     EnqueueExternal(Conversion.VideoConvert(Of(MediaKind.Video), options, VideoConvert.Output.Options, skipSame: false));
-                    return;
+                    return !background;
                 }
                 case ExplorerIntegration.ExtractAudio:
                     _ = ExtractExternalAsync(Of(MediaKind.Video));
-                    return;
+                    return !background;
                 case ExplorerIntegration.AudioMp3 or ExplorerIntegration.AudioOgg:
                 {
                     var options = JsonFile.Clone(AudioConvert.Audio.Options);
@@ -726,7 +1160,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     }
 
                     EnqueueExternal(Conversion.AudioConvert(Of(MediaKind.Audio), options, AudioConvert.Output.Options, skipSame: false));
-                    return;
+                    return !background;
                 }
                 case ExplorerIntegration.ImagePng or ExplorerIntegration.ImageJpg or ExplorerIntegration.ImageWebp:
                 {
@@ -738,7 +1172,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                         _ => ImageFormat.WebP
                     };
                     EnqueueExternal(Conversion.ImageConvert(Of(MediaKind.Image), options, ImageConvert.Output.Options, skipSame: false, "OpConvertImage"));
-                    return;
+                    return !background;
                 }
                 default:
                     // "Open in CONVERTit": always Quick Convert, independent of the page that is open.
@@ -748,12 +1182,47 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                         ShowToast(Loc.T("ToastUnsupportedDrop"), error: true);
                     }
 
-                    return;
+                    return true;
             }
         }
         catch (Exception ex)
         {
             ShowToast(ex.Message, error: true);
+            return true;
+        }
+    }
+
+    /// <summary>Explorer "Export images from ICO": every size as PNG into "name_icons" next to the file.</summary>
+    private async Task ExtractIconsAsync(List<string> files)
+    {
+        var count = 0;
+        string? folder = null;
+        using (BeginActivity(Loc.T("ActivityExtractIcons")))
+        {
+            foreach (var file in files)
+            {
+                try
+                {
+                    folder = Path.Combine(Path.GetDirectoryName(file) ?? "", Path.GetFileNameWithoutExtension(file) + "_icons");
+                    var target = folder;
+                    count += (await Task.Run(() => Engines.Image.ImageEngine.ExtractIcon(file, target))).Count;
+                }
+                catch (Exception ex)
+                {
+                    ShowToast(ex.Message, error: true);
+                }
+            }
+        }
+
+        var text = Loc.F("ToastIconsExtracted", count);
+        ShowToast(text);
+        if (IsWindowHidden())
+        {
+            ShowSystemNotification("CONVERTit", text, folder);
+            if (ExitWhenDrained && !Queue.IsBusy)
+            {
+                _exitTimer.Start();
+            }
         }
     }
 
@@ -770,16 +1239,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private bool _externalInBackground;
+
     private void EnqueueExternal(List<ConversionJob> jobs)
     {
         if (jobs.Count == 0)
         {
             ShowToast(Loc.T("ToastUnsupportedDrop"), error: true);
+            if (_externalInBackground && IsWindowHidden())
+            {
+                ShowSystemNotification("CONVERTit", Loc.T("ToastUnsupportedDrop"), null);
+                // Started only for this request: nothing to do, so exit again.
+                if (ExitWhenDrained && !Queue.IsBusy)
+                {
+                    _exitTimer.Start();
+                }
+            }
+
             return;
         }
 
         Queue.Enqueue(jobs);
-        NavigateTo(QueuePage);
+        if (!_externalInBackground)
+        {
+            NavigateTo(QueuePage);
+        }
+
         ShowToast(Loc.F("ToastQueued", jobs.Count));
     }
 
@@ -803,6 +1288,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         QueueStatusText = busy ? Loc.F("QueueStatus", active) : "";
         _queueNav.Badge = active > 0 ? active.ToString() : "";
         QueuePage.Refresh();
+        RaiseHeaderStatus();
+        TrayStateChanged?.Invoke();
 
         var failed = Queue.Jobs.Any(j => j.State == JobState.Failed && j.FinishedAt > DateTime.Now.AddMinutes(-60));
         QueueProgressChanged?.Invoke(busy, Queue.OverallProgress, failed);
@@ -843,7 +1330,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
 
         ShowToast(text, summary.Failed > 0);
-        if (Settings.SystemNotifications && !IsWindowActive())
+        if ((Settings.SystemNotifications || IsWindowHidden()) && !IsWindowActive())
         {
             ShowSystemNotification(Loc.T(summary.Failed > 0 ? "BatchDoneWithErrors" : "BatchDoneTitle"), text, summary.OutputFolder);
         }
@@ -851,6 +1338,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (Settings.OpenFolderWhenDone && summary.Done > 0 && summary.OutputFolder is not null)
         {
             AppEnvironment.OpenFolder(summary.OutputFolder);
+        }
+
+        // Started only for Explorer background jobs: exit shortly after the notification.
+        if (ExitWhenDrained && IsWindowHidden() && !Queue.IsBusy)
+        {
+            _exitTimer.Start();
         }
     }
 
@@ -886,6 +1379,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        Machine.Dispose();
         Queue.CancelAll();
         VideoTrim.Dispose();
         AudioTrim.Dispose();

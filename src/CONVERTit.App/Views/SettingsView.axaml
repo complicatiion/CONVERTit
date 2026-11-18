@@ -13,7 +13,7 @@
             <PathIcon Data="{StaticResource IconTranslate}" />
             <TextBlock Classes="h2" Text="{DynamicResource HdrGeneral}" />
           </StackPanel>
-          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto">
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
             <TextBlock Text="{DynamicResource LblLanguage}" />
             <ComboBox Grid.Column="1" ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}">
               <ComboBox.ItemTemplate>
@@ -27,6 +27,12 @@
             </ComboBox>
             <TextBlock Grid.Row="1" Text="{DynamicResource LblRememberSettings}" />
             <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding RememberSettings}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblShowHints}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding ShowHints}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblListThumbnails}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding ListThumbnails}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblTransparentImages}" />
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding TransparencyPolicies}" SelectedItem="{Binding TransparentImages}" ItemTemplate="{StaticResource EnumLabel}" />
           </Grid>
         </StackPanel>
       </Border>
@@ -81,37 +87,117 @@
             </Border>
           </Grid>
           <ProgressBar Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" IsVisible="{Binding IsBusy}" />
-          <WrapPanel HorizontalAlignment="Center">
-            <Button Margin="4,0,4,8" Command="{Binding ChooseFolderCommand}" IsEnabled="{Binding !IsBusy}">
+          <!-- Buttons right-aligned, main action (download/update) on the far right -->
+          <WrapPanel HorizontalAlignment="Right">
+            <Button Margin="8,0,0,8" Command="{Binding ChooseFolderCommand}" IsEnabled="{Binding !IsBusy}">
               <ctl:IconLabel Icon="{StaticResource IconFolderSearch}" Text="{DynamicResource BtnChooseFfmpegFolder}" />
             </Button>
-            <Button Margin="4,0,4,8" Command="{Binding OpenFolderCommand}">
+            <Button Margin="8,0,0,8" Command="{Binding OpenFolderCommand}">
               <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFolder}" />
             </Button>
-            <Button Margin="4,0,4,8" Classes="primary" Command="{Binding DownloadCommand}" IsEnabled="{Binding !IsBusy}">
+            <Button Margin="8,0,0,8" Classes="primary" Command="{Binding DownloadCommand}" IsEnabled="{Binding !IsBusy}">
               <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadInstall}" />
             </Button>
           </WrapPanel>
-          <ctl:HintText Hint="{DynamicResource HintModules}" HorizontalAlignment="Center" TextAlignment="Center" />
+          <ctl:HintText Hint="{DynamicResource HintModules}" />
         </StackPanel>
       </Border>
 
-      <!-- Performance -->
+      <!-- Performance: profile (Auto follows battery/mains and hardware) -->
       <Border Classes="card">
         <StackPanel>
           <StackPanel Classes="cardhead">
             <PathIcon Data="{StaticResource IconSpeed}" />
             <TextBlock Classes="h2" Text="{DynamicResource HdrPerformance}" />
           </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblPerformanceProfile}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding PerformanceProfiles}" SelectedItem="{Binding PerformanceProfile}" ItemTemplate="{StaticResource EnumLabel}" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblMediaParallel}" IsVisible="{Binding IsCustomProfile}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding MediaParallelChoices}" SelectedItem="{Binding MediaParallel}" IsVisible="{Binding IsCustomProfile}" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblImageParallel}" IsVisible="{Binding IsCustomProfile}" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding ImageParallelChoices}" SelectedItem="{Binding ImageParallel}" IsVisible="{Binding IsCustomProfile}" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblPriority}" IsVisible="{Binding IsCustomProfile}" />
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Priorities}" SelectedItem="{Binding Priority}" ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsCustomProfile}" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblUseHardware}" />
+            <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding UseHardwareEncoders}" OnContent="" OffContent="" />
+          </Grid>
+          <!-- What the profile does right now -->
+          <Border Classes="pill neutral" HorizontalAlignment="Left" Margin="0,2,0,6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <PathIcon Data="{StaticResource IconLeaf}" Width="14" Height="14" />
+              <TextBlock Classes="small" Text="{Binding ProfileStatus}" />
+            </StackPanel>
+          </Border>
+          <TextBlock Classes="small muted" Text="{Binding ProfileDetails}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <!-- Hardware & video processing -->
+      <Border Classes="card">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconGpu}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrVideoProcessing}" />
+          </StackPanel>
           <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto">
-            <TextBlock Text="{DynamicResource LblMediaParallel}" />
-            <ComboBox Grid.Column="1" ItemsSource="{Binding MediaParallelChoices}" SelectedItem="{Binding MediaParallel}" />
-            <TextBlock Grid.Row="1" Text="{DynamicResource LblImageParallel}" />
-            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ImageParallelChoices}" SelectedItem="{Binding ImageParallel}" />
-            <TextBlock Grid.Row="2" Text="{DynamicResource LblPriority}" />
-            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Priorities}" SelectedItem="{Binding Priority}" ItemTemplate="{StaticResource EnumLabel}" />
-            <TextBlock Grid.Row="3" Text="{DynamicResource LblUseHardware}" />
-            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding UseHardwareEncoders}" OnContent="" OffContent="" />
+            <TextBlock Text="{DynamicResource LblHardwareDecode}" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding HardwareDecode}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblGpuTurbo}" />
+            <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding GpuTurbo}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblHdrToSdr}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding HdrToSdr}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Text="{DynamicResource LblAutoDeinterlace}" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding AutoDeinterlace}" OnContent="" OffContent="" />
+          </Grid>
+          <ctl:HintText Hint="{DynamicResource HintGpu}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Background & notification area -->
+      <Border Classes="card" IsVisible="{Binding IsWindows}">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconTrayArrowDown}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrBackground}" />
+          </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="{DynamicResource LblMinimizeToTray}" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding MinimizeToTray}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Text="{DynamicResource LblCloseToTray}" />
+            <ToggleSwitch Grid.Row="1" Grid.Column="1" IsChecked="{Binding CloseToTray}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="2" Text="{DynamicResource LblStartWithWindows}" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1" IsChecked="{Binding StartWithWindows}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="3" Classes="muted" Text="{DynamicResource LblStartInTray}" Margin="18,0,0,10" />
+            <ToggleSwitch Grid.Row="3" Grid.Column="1" IsChecked="{Binding StartInTray}" IsEnabled="{Binding StartWithWindows}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="4" Text="{DynamicResource LblBackgroundExplorerJobs}" />
+            <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding BackgroundExplorerJobs}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="5" Classes="muted" Text="{DynamicResource LblExitAfterBackgroundJobs}" Margin="18,0,0,10" />
+            <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding ExitAfterBackgroundJobs}" IsEnabled="{Binding BackgroundExplorerJobs}" OnContent="" OffContent="" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- This system: what the detection found and why Auto chose its profile -->
+      <Border Classes="card" IsVisible="{Binding IsWindows}">
+        <StackPanel>
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconMonitor}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrThisSystem}" />
+          </StackPanel>
+          <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Classes="muted" Text="{DynamicResource LblCpu}" Margin="0,0,0,8" />
+            <SelectableTextBlock Grid.Column="1" Text="{Binding SystemCpu}" TextWrapping="Wrap" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="1" Classes="muted" Text="{DynamicResource LblCores}" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemCores}" TextWrapping="Wrap" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="2" Classes="muted" Text="{DynamicResource LblMemory}" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SystemMemory}" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="3" Classes="muted" Text="{DynamicResource LblGraphics}" Margin="0,0,0,8" />
+            <SelectableTextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SystemGpus}" TextWrapping="Wrap" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="4" Classes="muted" Text="{DynamicResource LblHwEncoders}" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Classes="mono small" Text="{Binding SystemEncoders}" TextWrapping="Wrap" Margin="0,0,0,8" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="5" Classes="muted" Text="{DynamicResource LblPowerSource}" />
+            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SystemPower}" TextWrapping="Wrap" />
           </Grid>
         </StackPanel>
       </Border>
@@ -123,7 +209,7 @@
             <PathIcon Data="{StaticResource IconBell}" />
             <TextBlock Classes="h2" Text="{DynamicResource HdrWindows}" />
           </StackPanel>
-          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+          <Grid Classes="opts" ColumnDefinitions="*,320" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Text="{DynamicResource LblPreventSleep}" />
             <ToggleSwitch Grid.Column="1" IsChecked="{Binding PreventSleep}" OnContent="" OffContent="" />
             <TextBlock Grid.Row="1" Text="{DynamicResource LblTaskbarProgress}" />
@@ -136,15 +222,58 @@
             <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding OpenFolderWhenDone}" OnContent="" OffContent="" />
             <TextBlock Grid.Row="5" Text="{DynamicResource LblExplorerMenu}" IsVisible="{Binding IsWindows}" />
             <ToggleSwitch Grid.Row="5" Grid.Column="1" IsChecked="{Binding ExplorerMenu}" OnContent="" OffContent="" IsVisible="{Binding IsWindows}" />
+            <TextBlock Grid.Row="6" Text="{DynamicResource LblAssociations}" IsVisible="{Binding IsWindows}" />
+            <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding AssociationModes}" SelectedItem="{Binding Associations}"
+                      ItemTemplate="{StaticResource EnumLabel}" IsVisible="{Binding IsWindows}" />
+            <TextBlock Grid.Row="7" Classes="muted" Text="{DynamicResource LblCustomAssociations}" Margin="18,0,0,10" IsVisible="{Binding IsCustomAssociations}" />
+            <Grid Grid.Row="7" Grid.Column="1" ColumnDefinitions="*,Auto" IsVisible="{Binding IsCustomAssociations}">
+              <TextBox Text="{Binding CustomAssociations}" Watermark="mkv, flac, webp" />
+              <Button Grid.Column="1" Classes="primary" Margin="8,0,0,0" Command="{Binding ApplyAssociationsCommand}">
+                <ctl:IconLabel Icon="{StaticResource IconCheck}" Text="{DynamicResource BtnApply}" />
+              </Button>
+            </Grid>
           </Grid>
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,4,0,0">
-            <Button Command="{Binding RemoveWindowsIntegrationCommand}">
+          <ctl:HintText Hint="{Binding AssociationsHint}" IsVisible="{Binding IsWindows}" />
+          <UniformGrid Rows="1" HorizontalAlignment="Right" Margin="0,4,-8,0">
+            <Button Classes="even" Command="{Binding RemoveWindowsIntegrationCommand}">
               <ctl:IconLabel Icon="{StaticResource IconDelete}" Text="{DynamicResource BtnRemoveIntegration}" />
             </Button>
-            <Button Command="{Binding TestNotificationCommand}">
+            <Button Classes="even" Command="{Binding OpenDefaultAppsCommand}" IsVisible="{Binding IsWindows}">
+              <ctl:IconLabel Icon="{StaticResource IconOpenInNew}" Text="{DynamicResource BtnDefaultApps}" />
+            </Button>
+            <Button Classes="even" Command="{Binding TestNotificationCommand}">
               <ctl:IconLabel Icon="{StaticResource IconBell}" Text="{DynamicResource BtnTestNotification}" />
             </Button>
+          </UniformGrid>
+        </StackPanel>
+      </Border>
+
+      <!-- Updates (opt-in: off by default, switching on asks first) -->
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <StackPanel Classes="cardhead">
+            <PathIcon Data="{StaticResource IconUpdate}" />
+            <TextBlock Classes="h2" Text="{DynamicResource HdrUpdates}" />
           </StackPanel>
+          <Grid Classes="opts" ColumnDefinitions="*,280" RowDefinitions="Auto,Auto">
+            <TextBlock Text="{DynamicResource LblCheckForUpdates}" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CheckForUpdates}" OnContent="" OffContent="" />
+            <TextBlock Grid.Row="1" Classes="muted" Text="{Binding CurrentVersionText}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Classes="small accent" Text="{Binding UpdateStatus}" TextWrapping="Wrap" IsVisible="{Binding HasUpdateStatus}" />
+          </Grid>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding UpdateProgress}" IsVisible="{Binding IsUpdating}" />
+          <ctl:HintText Hint="{DynamicResource HintUpdates}" />
+          <UniformGrid Rows="1" HorizontalAlignment="Right" Margin="0,0,-8,0">
+            <Button Classes="even" Command="{Binding OpenReleasePageCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconWeb}" Text="{DynamicResource BtnReleasePage}" />
+            </Button>
+            <Button Classes="even" Command="{Binding CheckUpdatesNowCommand}" IsEnabled="{Binding !IsUpdating}">
+              <ctl:IconLabel Icon="{StaticResource IconRefresh}" Text="{DynamicResource BtnCheckNow}" />
+            </Button>
+            <Button Classes="even primary" Command="{Binding DownloadUpdateCommand}" IsEnabled="{Binding HasUpdate}">
+              <ctl:IconLabel Icon="{StaticResource IconDownload}" Text="{DynamicResource BtnDownloadUpdate}" />
+            </Button>
+          </UniformGrid>
         </StackPanel>
       </Border>
 
@@ -162,14 +291,17 @@
             </Border>
           </StackPanel>
           <ctl:HintText Hint="{DynamicResource HintPortable}" IsVisible="{Binding IsPortable}" />
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Command="{Binding ResetPageSettingsCommand}">
+          <UniformGrid Rows="1" HorizontalAlignment="Right" Margin="0,0,-8,0">
+            <Button Classes="even" Command="{Binding ClearThumbnailCacheCommand}">
+              <ctl:IconLabel Icon="{StaticResource IconBroom}" Text="{DynamicResource BtnClearThumbnails}" />
+            </Button>
+            <Button Classes="even" Command="{Binding ResetPageSettingsCommand}">
               <ctl:IconLabel Icon="{StaticResource IconUndo}" Text="{DynamicResource BtnResetPages}" />
             </Button>
-            <Button Command="{Binding OpenDataFolderCommand}">
+            <Button Classes="even" Command="{Binding OpenDataFolderCommand}">
               <ctl:IconLabel Icon="{StaticResource IconFolderOpen}" Text="{DynamicResource BtnOpenFolder}" />
             </Button>
-          </StackPanel>
+          </UniformGrid>
         </StackPanel>
       </Border>
     </StackPanel>

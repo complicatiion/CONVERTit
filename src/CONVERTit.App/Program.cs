@@ -27,6 +27,12 @@ internal static class Program
     /// <summary>Raised on a background thread when a request arrived.</summary>
     internal static event Action? RequestArrived;
 
+    /// <summary>"--tray": started with Windows (the window stays hidden when Settings › Start in notification area is on).</summary>
+    internal static bool StartedFromAutostart { get; private set; }
+
+    /// <summary>Explorer action of this start (the first instance decides whether it starts hidden).</summary>
+    internal static string? StartAction { get; private set; }
+
     [STAThread]
     public static int Main(string[] args)
     {
@@ -36,7 +42,7 @@ internal static class Program
             return 0;
         }
 
-        // Uninstaller: remove the per-user Explorer menu and notification registration, then exit.
+        // Uninstaller: remove the per-user Explorer menu, notification registration and autostart entry, then exit.
         if (args.Length == 1 && args[0] == "--unregister")
         {
             if (OperatingSystem.IsWindows())
@@ -44,12 +50,22 @@ internal static class Program
                 ExplorerMenu.Unregister(Core.Media.MediaTypes.VideoExtensions
                     .Concat(Core.Media.MediaTypes.AudioExtensions).Concat(Core.Media.MediaTypes.ImageExtensions));
                 Notifications.Unregister();
+                FileAssociations.Unregister();
+                TrySetAutostart(false);
             }
 
             return 0;
         }
 
+        // Installer task "Start with Windows": "--autostart on|off" writes the same entry as the settings switch.
+        if (args.Length == 2 && args[0] == "--autostart")
+        {
+            return OperatingSystem.IsWindows() && TrySetAutostart(args[1] is "on" or "1" or "true") ? 0 : 1;
+        }
+
         var request = Parse(args);
+        StartedFromAutostart = args.Contains("--tray");
+        StartAction = request.Action;
 
         Mutex? mutex = null;
         if (OperatingSystem.IsWindows())
@@ -95,6 +111,19 @@ internal static class Program
             ShowSignal?.Dispose();
             mutex?.ReleaseMutex();
             mutex?.Dispose();
+        }
+    }
+
+    private static bool TrySetAutostart(bool enabled)
+    {
+        try
+        {
+            Autostart.Set(Services.AppEnvironment.AutostartName, enabled, Services.AppEnvironment.ExecutablePath, "--tray");
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 

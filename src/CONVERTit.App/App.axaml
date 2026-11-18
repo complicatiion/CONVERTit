@@ -98,6 +98,10 @@
           </TextBlock.Text>
         </TextBlock>
       </DataTemplate>
+      <!-- Whole factors (pixel art scaling): "2 ×" -->
+      <DataTemplate x:Key="FactorLabel">
+        <TextBlock Text="{Binding StringFormat={}{0} ×}" />
+      </DataTemplate>
       <DataTemplate x:Key="WidthLabel">
         <TextBlock>
           <TextBlock.Text>
@@ -112,6 +116,56 @@
         <TextBlock>
           <TextBlock.Text>
             <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="fps">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="HeightLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="height">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="ColorsLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="colors">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="AudioQualityLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="aquality">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="NoiseLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="noise">
+              <Binding />
+              <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+      </DataTemplate>
+      <DataTemplate x:Key="TileLabel">
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding Converter="{StaticResource LabelMulti}" ConverterParameter="tile">
               <Binding />
               <Binding Source="{x:Static loc:LocState.Instance}" Path="Version" />
             </MultiBinding>

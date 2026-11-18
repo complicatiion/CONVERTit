@@ -107,20 +107,22 @@
                               IsVisible="{Binding !HasCover}" HorizontalAlignment="Center" />
                   </Panel>
                 </Border>
-                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                  <TextBlock Classes="muted" Text="{Binding CoverInfo}" TextWrapping="Wrap" />
-                  <WrapPanel>
-                    <Button Margin="0,0,8,8" Command="{Binding ChooseCoverCommand}">
-                      <ctl:IconLabel Icon="{StaticResource IconImagePlus}" Text="{DynamicResource BtnChooseCover}" />
-                    </Button>
-                    <Button Margin="0,0,8,8" Command="{Binding ExportCoverCommand}" IsVisible="{Binding HasCover}">
-                      <ctl:IconLabel Icon="{StaticResource IconExport}" Text="{DynamicResource BtnExportCover}" />
-                    </Button>
-                    <Button Margin="0,0,8,8" Classes="danger" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}">
+                <!-- Text and buttons right-aligned; the cover preview stays on the left -->
+                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Right">
+                  <TextBlock Classes="muted" Text="{Binding CoverInfo}" TextWrapping="Wrap" TextAlignment="Right" HorizontalAlignment="Right" />
+                  <!-- Main action (choose cover) on the far right -->
+                  <WrapPanel HorizontalAlignment="Right">
+                    <Button Margin="8,0,0,8" Classes="danger" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}">
                       <ctl:IconLabel Icon="{StaticResource IconImageRemove}" Text="{DynamicResource BtnRemoveCover}" />
                     </Button>
+                    <Button Margin="8,0,0,8" Command="{Binding ExportCoverCommand}" IsVisible="{Binding HasCover}">
+                      <ctl:IconLabel Icon="{StaticResource IconExport}" Text="{DynamicResource BtnExportCover}" />
+                    </Button>
+                    <Button Margin="8,0,0,8" Command="{Binding ChooseCoverCommand}">
+                      <ctl:IconLabel Icon="{StaticResource IconImagePlus}" Text="{DynamicResource BtnChooseCover}" />
+                    </Button>
                   </WrapPanel>
-                  <ctl:HintText Hint="{DynamicResource HintCoverDrop}" />
+                  <ctl:HintText Hint="{DynamicResource HintCoverDrop}" HorizontalAlignment="Right" TextAlignment="Right" />
                 </StackPanel>
               </Grid>
             </StackPanel>
@@ -157,17 +159,18 @@
                 <TextBlock Classes="label" Text="{DynamicResource LblNamePattern}" />
                 <TextBox Classes="mono" Text="{Binding Pattern}" Watermark="%track% - %artist% - %title%" />
               </StackPanel>
-              <WrapPanel>
-                <Button Margin="0,0,8,8" Command="{Binding TagsFromNamesCommand}">
+              <!-- Tool buttons right-aligned -->
+              <WrapPanel HorizontalAlignment="Right">
+                <Button Margin="8,0,0,8" Command="{Binding TagsFromNamesCommand}">
                   <ctl:IconLabel Icon="{StaticResource IconFileImport}" Text="{DynamicResource BtnTagsFromNames}" />
                 </Button>
-                <Button Margin="0,0,8,8" Command="{Binding RenameFromTagsCommand}">
+                <Button Margin="8,0,0,8" Command="{Binding RenameFromTagsCommand}">
                   <ctl:IconLabel Icon="{StaticResource IconRename}" Text="{DynamicResource BtnRenameFromTags}" />
                 </Button>
-                <Button Margin="0,0,8,8" Command="{Binding NumberTracksCommand}">
+                <Button Margin="8,0,0,8" Command="{Binding NumberTracksCommand}">
                   <ctl:IconLabel Icon="{StaticResource IconNumeric}" Text="{DynamicResource BtnNumberTracks}" />
                 </Button>
-                <Button Margin="0,0,8,8" Command="{Binding TitleCaseCommand}">
+                <Button Margin="8,0,0,8" Command="{Binding TitleCaseCommand}">
                   <ctl:IconLabel Icon="{StaticResource IconFormatLetterCase}" Text="{DynamicResource BtnTitleCase}" />
                 </Button>
               </WrapPanel>

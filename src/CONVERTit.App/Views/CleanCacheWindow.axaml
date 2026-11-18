@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="using:CONVERTit.App.Controls"
+        x:Class="CONVERTit.App.Views.CleanCacheWindow"
+        Icon="/Assets/convertit.ico"
+        Width="560"
+        SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <!-- Opt-in: "Clean" is enabled only with at least one cache chosen and "I understand" ticked. Cancel left, main action right. -->
+  <Border Padding="24">
+    <StackPanel Spacing="14">
+      <PathIcon Data="{StaticResource IconBroom}" Width="36" Height="36" HorizontalAlignment="Center" Foreground="{DynamicResource BrushDanger}" />
+      <TextBlock Classes="h2" Text="{DynamicResource CleanCacheTitle}" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+      <TextBlock Classes="muted" Text="{DynamicResource CleanCacheText}" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+      <Border Classes="inset">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+          <StackPanel Margin="0,0,0,10">
+            <TextBlock Text="{DynamicResource CleanThumbnails}" FontWeight="SemiBold" />
+            <TextBlock x:Name="ThumbnailsInfo" Classes="small muted" />
+          </StackPanel>
+          <ToggleSwitch x:Name="ThumbnailsSwitch" Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Margin="0,0,0,10" />
+          <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="{DynamicResource CleanIcons}" FontWeight="SemiBold" />
+            <TextBlock x:Name="IconsInfo" Classes="small muted" TextWrapping="Wrap" />
+          </StackPanel>
+          <ToggleSwitch x:Name="IconsSwitch" Grid.Row="1" Grid.Column="1" OnContent="" OffContent="" Margin="0,0,0,10" />
+          <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="{DynamicResource CleanOwnPreviews}" FontWeight="SemiBold" />
+            <TextBlock x:Name="OwnInfo" Classes="small muted" />
+          </StackPanel>
+          <ToggleSwitch x:Name="OwnSwitch" Grid.Row="2" Grid.Column="1" OnContent="" OffContent="" Margin="0,0,0,10" />
+          <StackPanel Grid.Row="3">
+            <TextBlock Text="{DynamicResource CleanRestartExplorer}" FontWeight="SemiBold" />
+            <TextBlock Classes="small muted" Text="{DynamicResource CleanRestartExplorerHint}" TextWrapping="Wrap" />
+          </StackPanel>
+          <ToggleSwitch x:Name="RestartSwitch" Grid.Row="3" Grid.Column="1" IsChecked="True" OnContent="" OffContent="" />
+        </Grid>
+      </Border>
+      <CheckBox x:Name="UnderstandBox" HorizontalAlignment="Center">
+        <TextBlock Text="{DynamicResource CleanUnderstand}" TextWrapping="Wrap" MaxWidth="460" />
+      </CheckBox>
+      <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" Margin="0,6,0,0">
+        <Button Click="OnCancel" IsCancel="True" Classes="fixed">
+          <ctl:IconLabel Icon="{StaticResource IconClose}" Text="{DynamicResource BtnCancel}" />
+        </Button>
+        <Button x:Name="ConfirmButton" Click="OnConfirm" Classes="danger fixed" IsEnabled="False">
+          <ctl:IconLabel Icon="{StaticResource IconBroom}" Text="{DynamicResource BtnClean}" />
+        </Button>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>
