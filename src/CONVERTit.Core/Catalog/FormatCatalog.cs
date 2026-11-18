@@ -105,6 +105,10 @@ public static class FormatCatalog
     };
 
     /// <summary>Hardware encoders CONVERTit tests on start (see HardwareProbe).</summary>
+    public static bool IsHardwareEncoder(string encoder) =>
+        encoder.EndsWith("_nvenc", StringComparison.Ordinal) || encoder.EndsWith("_qsv", StringComparison.Ordinal)
+        || encoder.EndsWith("_amf", StringComparison.Ordinal);
+
     public static readonly IReadOnlyList<string> HardwareEncoders =
     [
         "h264_nvenc", "hevc_nvenc", "av1_nvenc",
@@ -120,6 +124,36 @@ public static class FormatCatalog
 
     /// <summary>Maximum CRF/CQ value of a codec.</summary>
     public static int CrfMax(VideoCodec codec) => codec is VideoCodec.Av1 or VideoCodec.Vp9 ? 63 : 51;
+
+    /// <summary>
+    /// Quality value for a hardware encoder that matches a software CRF in size and look (approximation).
+    /// NVENC CQ and QSV ICQ produce larger files than x264/x265 at the same number, AMF's constant QP even more;
+    /// AMF AV1 uses a 0–255 scale, QSV ICQ 1–51 for every codec, NVENC CQ 1–51 (AV1 1–63; 0 would mean "automatic").
+    /// </summary>
+    public static int HardwareQuality(string encoder, VideoCodec codec, int crf)
+    {
+        var max = CrfMax(codec);
+        crf = Math.Clamp(crf, 0, max);
+        if (encoder.EndsWith("_nvenc", StringComparison.Ordinal))
+        {
+            return Math.Clamp(crf + 3, 1, codec == VideoCodec.Av1 ? 63 : 51);
+        }
+
+        if (encoder.EndsWith("_qsv", StringComparison.Ordinal))
+        {
+            var scaled = codec == VideoCodec.Av1 ? (int)Math.Round(crf * 51d / 63d) : crf;
+            return Math.Clamp(scaled + 2, 1, 51);
+        }
+
+        if (encoder.EndsWith("_amf", StringComparison.Ordinal))
+        {
+            return codec == VideoCodec.Av1
+                ? Math.Clamp((int)Math.Round(crf * 255d / 63d) + 12, 0, 255)
+                : Math.Clamp(crf + 3, 0, 51);
+        }
+
+        return crf;
+    }
 
     /// <summary>CRF that matches a quality preset (lower = better).</summary>
     public static int CrfFor(VideoCodec codec, QualityPreset preset) => (codec, preset) switch

@@ -102,6 +102,91 @@ public static class ImageEngine
         };
     }
 
+    /// <summary>
+    /// Writes every size stored in an .ico as PNG ("name_32x32.png" …) into <paramref name="outputDirectory"/>.
+    /// Several entries of the same size (different color depths) keep the first one. Returns the written files.
+    /// </summary>
+    public static List<string> ExtractIcon(string icoPath, string outputDirectory)
+    {
+        Directory.CreateDirectory(outputDirectory);
+        var name = Path.GetFileNameWithoutExtension(icoPath);
+        var written = new List<string>();
+        var sizes = new HashSet<(uint, uint)>();
+        using var frames = new MagickImageCollection(icoPath);
+        foreach (var frame in frames)
+        {
+            if (!sizes.Add((frame.Width, frame.Height)))
+            {
+                continue;
+            }
+
+            var target = Path.Combine(outputDirectory, $"{name}_{frame.Width}x{frame.Height}.png");
+            frame.Write(target, MagickFormat.Png);
+            written.Add(target);
+        }
+
+        return written;
+    }
+
+    /// <summary>Formats that can carry transparency (others are skipped by <see cref="HasTransparency"/>).</summary>
+    private static readonly HashSet<string> AlphaExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".webp", ".gif", ".tif", ".tiff", ".tga", ".ico", ".avif", ".heic", ".psd", ".dds", ".svg", ".jxl", ".bmp"
+    };
+
+    /// <summary>
+    /// True when the image has really transparent pixels (an alpha channel that is fully opaque everywhere does not
+    /// count). Only the first frame is checked.
+    /// </summary>
+    public static bool HasTransparency(string path)
+    {
+        if (!AlphaExtensions.Contains(Path.GetExtension(path)))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var image = new MagickImage();
+            image.Read(path, new MagickReadSettings { FrameIndex = 0, FrameCount = 1 });
+            return image.HasAlpha && !image.IsOpaque;
+        }
+        catch (MagickException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Small JPEG for list thumbnails (first frame, auto-oriented, transparency on a neutral gray).</summary>
+    public static byte[] Thumbnail(string path, int size)
+    {
+        using var image = new MagickImage();
+        image.Read(path, new MagickReadSettings { FrameIndex = 0, FrameCount = 1 });
+        return ToThumbnail(image, size);
+    }
+
+    /// <summary>Same as <see cref="Thumbnail"/> from encoded bytes (video frame, cover art).</summary>
+    public static byte[] ThumbnailFromBytes(byte[] data, int size)
+    {
+        using var image = new MagickImage(data);
+        return ToThumbnail(image, size);
+    }
+
+    private static byte[] ToThumbnail(MagickImage image, int size)
+    {
+        image.AutoOrient();
+        image.Thumbnail(new MagickGeometry((uint)size, (uint)size) { Greater = true });
+        if (image.HasAlpha)
+        {
+            image.BackgroundColor = new MagickColor("#808080");
+            image.Alpha(AlphaOption.Remove);
+        }
+
+        image.Strip();
+        image.Quality = 82;
+        return image.ToByteArray(MagickFormat.Jpeg);
+    }
+
     /// <summary>Downscaled PNG for previews (optionally on a solid background).</summary>
     public static byte[] Preview(string path, int maxSize)
     {
@@ -181,6 +266,13 @@ public static class ImageEngine
 
         var keepAlpha = o.KeepTransparency && FormatCatalog.SupportsAlpha(target);
         Resize(image, o, keepAlpha);
+        if (o.PixelScale > 1)
+        {
+            // Pixel art: whole factor, hard pixels.
+            image.FilterType = FilterType.Point;
+            image.Resize(new MagickGeometry(image.Width * (uint)o.PixelScale, image.Height * (uint)o.PixelScale) { IgnoreAspectRatio = true });
+        }
+
         PowerOfTwoResize(image, o.PowerOfTwo);
 
         if (!keepAlpha && image.HasAlpha)
@@ -284,7 +376,7 @@ public static class ImageEngine
 
                 break;
             case ImageFormat.Jpeg:
-                image.Quality = quality;
+                image.Quality = (uint)Math.Clamp(o.JpegQuality, 1, 100);
                 image.Settings.SetDefine(MagickFormat.Jpeg, "sampling-factor", o.JpegChroma == ChromaSubsampling.S444 ? "4:4:4" : "4:2:0");
                 image.Write(output, o.JpegProgressive ? MagickFormat.Pjpeg : MagickFormat.Jpeg);
                 break;

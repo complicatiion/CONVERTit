@@ -112,4 +112,18 @@ public static class SizeEstimator
         var videoBits = bpp * pixels * fps;
         return (long)((videoBits + audioBits) * duration / 8);
     }
+
+    /// <summary>
+    /// Rough size of a GIF / animated WebP: pixels per second times a typical bytes-per-pixel factor (GIF with
+    /// palette and dithering ≈ 0.11, WebP ≈ 0.035). Good enough for a warning, not a promise.
+    /// </summary>
+    public static long Animation(double width, double height, int fps, double seconds, bool gif)
+    {
+        if (width <= 0 || height <= 0 || fps <= 0 || seconds <= 0)
+        {
+            return 0;
+        }
+
+        return (long)(width * height * fps * seconds * (gif ? 0.11 : 0.035));
+    }
 }

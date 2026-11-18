@@ -59,6 +59,9 @@ public enum ResizeMode { Off, MaxSize, Percent, Exact }
 
 public enum IconFit { Pad, Crop }
 
+/// <summary>Image › Icon &amp; Favicon output: Windows .ico (default), PNG per size, macOS .icns, SVG (vector sources only).</summary>
+public enum IconExport { Ico, PngSet, Icns, Svg }
+
 public enum TrimMode { Exact, Fast }
 
 public enum LoopMode { Off, Count, Duration, Boomerang }
@@ -74,7 +77,7 @@ public enum OutputDestination { Subfolder, SameFolder, Custom }
 public enum ConflictPolicy { Rename, Skip, Overwrite }
 
 /// <summary>Output of the trim page: keep the format (fast copy or exact re-encode) or convert.</summary>
-public enum TrimOutput { SameFormat, Convert }
+public enum TrimOutput { SameFormat, Convert, Gif, AnimatedWebP }
 
 /// <summary>Compress: hit a file size, a share of the original size, or a quality level.</summary>
 public enum CompressMode { TargetSize, Percent, Quality }
@@ -90,3 +93,56 @@ public enum TexturePreset { Unity, Unreal, Godot, DirectX, Legacy, Custom }
 
 /// <summary>Presets of Audio › Game audio.</summary>
 public enum GameAudioPreset { UnitySfx, UnityMusic, UnrealSfx, UnrealMusic, GodotSfx, GodotMusic, Custom }
+
+/// <summary>AI upscaler (optional module).</summary>
+public enum UpscaleEngine
+{
+    /// <summary>Real-ESRGAN x4plus: photos and general images.</summary>
+    RealEsrganPhoto,
+
+    /// <summary>Real-ESRGAN x4plus-anime: drawings, anime, pixel-free art.</summary>
+    RealEsrganAnime,
+
+    /// <summary>Real-ESRGAN animevideov3: fast model for anime videos (x2/x3/x4).</summary>
+    RealEsrganVideo,
+
+    /// <summary>waifu2x CUnet: drawings and anime, with adjustable denoise.</summary>
+    Waifu2x
+}
+
+/// <summary>Video denoise filter (FFmpeg).</summary>
+public enum VideoDenoise
+{
+    Off,
+
+    /// <summary>hqdn3d: fast, light to medium noise.</summary>
+    Fast,
+
+    /// <summary>nlmeans: high quality, slow (CPU).</summary>
+    Quality,
+
+    /// <summary>nlmeans_vulkan: like Quality on the GPU (needs a Vulkan-capable FFmpeg build and GPU).</summary>
+    QualityGpu
+}
+
+/// <summary>Audio denoise filter (FFmpeg).</summary>
+public enum AudioDenoise
+{
+    Off,
+
+    /// <summary>afftdn: spectral noise reduction (hiss, hum, constant noise).</summary>
+    Spectral,
+
+    /// <summary>anlmdn: non-local means, for broadband noise.</summary>
+    NonLocal
+}
+
+/// <summary>Frame interpolation method.</summary>
+public enum InterpolationEngine
+{
+    /// <summary>RIFE (optional module, GPU): best quality.</summary>
+    Rife,
+
+    /// <summary>FFmpeg minterpolate: no module needed, slow and with artefacts on fast motion.</summary>
+    Ffmpeg
+}

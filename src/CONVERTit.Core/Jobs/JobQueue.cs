@@ -115,6 +115,29 @@ public sealed class JobQueue
     /// <summary>Parallel image conversions.</summary>
     public int ImageParallel { get; set; } = Math.Clamp(Environment.ProcessorCount / 2, 1, 8);
 
+    private volatile bool _paused;
+
+    /// <summary>Paused: running jobs finish, waiting jobs do not start (tray menu, low battery in the Eco profile).</summary>
+    public bool IsPaused
+    {
+        get => _paused;
+        set
+        {
+            if (_paused == value)
+            {
+                return;
+            }
+
+            _paused = value;
+            if (!value)
+            {
+                Pump();
+            }
+
+            _post(() => Changed?.Invoke());
+        }
+    }
+
     /// <summary>Raised on the UI thread after a job started, finished or was added.</summary>
     public event Action? Changed;
 
@@ -296,6 +319,11 @@ public sealed class JobQueue
     /// <summary>Starts waiting jobs while their lane has free slots.</summary>
     public void Pump()
     {
+        if (_paused)
+        {
+            return;
+        }
+
         List<ConversionJob> start = [];
         lock (_lock)
         {
@@ -439,6 +467,11 @@ public sealed class JobQueue
             if (File.Exists(path))
             {
                 File.Delete(path);
+            }
+            else if (Directory.Exists(path))
+            {
+                // Temporary folders (video frames for sprite sheets, upscaling).
+                Directory.Delete(path, recursive: true);
             }
         }
         catch

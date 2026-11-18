@@ -7,8 +7,11 @@ public sealed partial class ImageOptions : ObservableObject
 {
     [ObservableProperty] private ImageFormat _format = ImageFormat.Png;
 
-    /// <summary>Quality 1–100 for JPEG, lossy WebP and AVIF.</summary>
+    /// <summary>Quality 1–100 for lossy WebP and AVIF.</summary>
     [ObservableProperty] private int _quality = 85;
+
+    /// <summary>JPEG quality 1–100: 95 by default (visually lossless; 100 is 2–3× larger without visible gain).</summary>
+    [ObservableProperty] private int _jpegQuality = 95;
 
     // ---------------------------------------------------------------- PNG
     /// <summary>zlib level 0–9: lossless, only size and speed change.</summary>
@@ -50,6 +53,18 @@ public sealed partial class ImageOptions : ObservableObject
 
     /// <summary>Scale each side to a power of two (256, 512, 1024 …) after resizing.</summary>
     [ObservableProperty] private PowerOfTwo _powerOfTwo = PowerOfTwo.Off;
+
+    /// <summary>Pixel art: enlarge by a whole factor without smoothing (nearest neighbour). 1 = off.</summary>
+    [ObservableProperty] private int _pixelScale = 1;
+
+    /// <summary>Game textures: also write a normal map "name_n.png" (2D lighting, e.g. Godot CanvasTexture).</summary>
+    [ObservableProperty] private bool _normalMap;
+
+    /// <summary>Normal map strength (bumpiness), 0.5–10.</summary>
+    [ObservableProperty] private double _normalStrength = 2;
+
+    /// <summary>Normal map green channel down (DirectX/Unreal convention); off = OpenGL/Godot/Unity convention.</summary>
+    [ObservableProperty] private bool _normalInvertY;
 
     /// <summary>Animated GIF/WebP sources stay animated when the target supports it.</summary>
     [ObservableProperty] private bool _keepAnimation = true;

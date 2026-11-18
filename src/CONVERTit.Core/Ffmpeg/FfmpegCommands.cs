@@ -23,6 +23,15 @@ public sealed record ClipRange(double Start, double? Duration)
 /// <summary>Arguments for one FFmpeg run (without the common prefix the runner adds).</summary>
 public sealed record FfmpegCommand(IReadOnlyList<string> Args, double ExpectedSeconds, IReadOnlyList<string> Warnings)
 {
+    /// <summary>Full GPU pipeline is used (a failed run is repeated without it).</summary>
+    public bool UsesTurbo { get; init; }
+
+    /// <summary>"-hwaccel auto" is used (a failed run is repeated without it).</summary>
+    public bool UsesHardwareDecode { get; init; }
+
+    /// <summary>Working folder of the process (x265 two-pass statistics use a relative name).</summary>
+    public string? WorkingDirectory { get; init; }
+
     public override string ToString() => FfmpegCommands.Display(Args);
 }
 
@@ -44,8 +53,9 @@ public static class FfmpegCommands
 
     /// <summary>Re-encodes video (convert, exact trim, boomerang).</summary>
     public static FfmpegCommand Video(MediaInfo info, string input, string output, VideoOptions o,
-        ClipRange? clip = null, double fadeIn = 0, double fadeOut = 0, bool boomerang = false)
+        ClipRange? clip = null, double fadeIn = 0, double fadeOut = 0, bool boomerang = false, EncodeEnvironment? environment = null)
     {
+        var env = environment ?? EncodeEnvironment.Default;
         if (o.QualityMode == VideoQualityMode.TargetSize)
         {
             o = CompressPlanner.ResolveTargetSize(info, o);
@@ -57,20 +67,58 @@ public static class FfmpegCommands
         var codec = FormatCatalog.CodecsFor(container).Contains(o.Codec) ? o.Codec : FormatCatalog.CodecsFor(container)[0];
         var encoder = FormatCatalog.VideoEncoder(codec, o.Acceleration) ?? FormatCatalog.VideoEncoder(codec, Acceleration.Off)!;
 
-        AddInput(a, input, clip);
         var duration = Duration(info, clip);
         var video = info.MainVideo ?? throw new ConversionException("ErrNoVideoStream");
-
-        // Picture: size/aspect, frame rate, fades.
-        var filters = new List<string>();
         var (sw, sh) = video.DisplaySize;
-        var geometry = VideoGeometry.Filter(sw, sh, o);
-        if (geometry.Length > 0)
+        var fps = FormatCatalog.FrameRateExpression(o.FrameRate, o.CustomFps);
+        var deinterlace = env.AutoDeinterlace && video.IsInterlaced;
+
+        // HDR: 10-bit HEVC/AV1 targets keep it (color tags are carried over), everything else is tone mapped to SDR.
+        var keepHdr = video.IsHdr && !o.Compatible8Bit && codec is VideoCodec.H265 or VideoCodec.Av1;
+        var toneMap = video.IsHdr && !keepHdr && env.HdrToSdr;
+
+        // GPU turbo: decode → scale → encode stays on the GPU. Only for plain jobs; everything else uses CPU filters.
+        var turbo = UseTurbo(env, encoder, video, o, fps, deinterlace, video.IsHdr, boomerang || fadeIn > 0 || fadeOut > 0, out var turboScale);
+        var hwDecode = !turbo && env.HardwareDecode && HardwareDecodable(video.Codec);
+        var inputArgs = turbo
+            ? encoder.EndsWith("_nvenc", StringComparison.Ordinal)
+                ? new[] { "-hwaccel", "cuda", "-hwaccel_output_format", "cuda" }
+                : new[] { "-hwaccel", "qsv", "-hwaccel_output_format", "qsv" }
+            : hwDecode ? new[] { "-hwaccel", "auto" } : [];
+        AddInput(a, input, clip, inputArgs);
+
+        // Picture: deinterlace, size/aspect, tone mapping, frame rate, fades.
+        var filters = new List<string>();
+        if (turbo)
         {
-            filters.Add(geometry);
+            if (turboScale is { } size)
+            {
+                filters.Add(encoder.EndsWith("_nvenc", StringComparison.Ordinal)
+                    ? $"scale_cuda={size.Width}:{size.Height}:interp_algo=lanczos"
+                    : $"scale_qsv=w={size.Width}:h={size.Height}");
+            }
+        }
+        else
+        {
+            if (deinterlace)
+            {
+                filters.Add("bwdif=mode=send_frame:parity=auto:deint=interlaced");
+                warnings.Add("WarnDeinterlaced");
+            }
+
+            var geometry = VideoGeometry.Filter(sw, sh, o);
+            if (geometry.Length > 0)
+            {
+                filters.Add(geometry);
+            }
+
+            if (toneMap)
+            {
+                filters.Add(ToneMapFilter);
+                warnings.Add("WarnHdrToneMapped");
+            }
         }
 
-        var fps = FormatCatalog.FrameRateExpression(o.FrameRate, o.CustomFps);
         if (fps is not null)
         {
             filters.Add(o.FpsConversion switch
@@ -147,7 +195,8 @@ public static class FfmpegCommands
         a.Add(encoder);
         AddVideoQuality(a, codec, encoder, o);
         AddVideoSpeed(a, encoder, o.Speed);
-        if (o.Compatible8Bit)
+        // GPU frames keep their format (turbo only runs on 8-bit 4:2:0 sources); tone mapping already ends in yuv420p.
+        if (o.Compatible8Bit && !turbo)
         {
             a.Add("-pix_fmt");
             a.Add(encoder.EndsWith("_qsv", StringComparison.Ordinal) || encoder.EndsWith("_amf", StringComparison.Ordinal) ? "nv12" : "yuv420p");
@@ -156,7 +205,22 @@ public static class FfmpegCommands
         if (encoder == "libx265")
         {
             a.Add("-x265-params");
-            a.Add("log-level=error");
+            a.Add(env.Threads > 0 ? $"log-level=error:pools={env.Threads}" : "log-level=error");
+        }
+        else if (env.Threads > 0 && !FormatCatalog.IsHardwareEncoder(encoder))
+        {
+            a.Add("-threads");
+            a.Add(env.Threads.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (keepHdr)
+        {
+            a.AddRange(["-color_primaries", Or(video.ColorPrimaries, "bt2020"), "-color_trc", video.ColorTransfer,
+                "-colorspace", Or(video.ColorSpace, "bt2020nc")]);
+        }
+        else if (toneMap)
+        {
+            a.AddRange(["-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"]);
         }
         else if (encoder == "libvpx-vp9")
         {
@@ -177,8 +241,48 @@ public static class FfmpegCommands
         }
 
         a.Add(output);
-        return new FfmpegCommand(a, duration, warnings);
+        return new FfmpegCommand(a, duration, warnings) { UsesTurbo = turbo, UsesHardwareDecode = hwDecode };
     }
+
+    /// <summary>HDR (PQ/HLG) → SDR BT.709 with zimg: linear light, Hable curve, back to TV-range yuv420p.</summary>
+    public const string ToneMapFilter =
+        "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p";
+
+    /// <summary>Codecs that GPUs decode (H.264, HEVC, AV1, VP9, MPEG-2, VC-1); others are decoded by the CPU.</summary>
+    public static bool HardwareDecodable(string codec) => codec is "h264" or "hevc" or "av1" or "vp9" or "mpeg2video" or "vc1";
+
+    /// <summary>
+    /// Full GPU pipeline possible? NVENC/QSV encoder, 8-bit 4:2:0 source in a GPU-decodable codec, no rotation,
+    /// and the only picture change is a resize that keeps the aspect ratio (no pad/crop, fps, fades, HDR, deinterlace).
+    /// </summary>
+    private static bool UseTurbo(EncodeEnvironment env, string encoder, VideoStreamInfo video, VideoOptions o, string? fps,
+        bool deinterlace, bool hdr, bool effects, out VideoGeometry.Size? scale)
+    {
+        scale = null;
+        var gpu = encoder.EndsWith("_nvenc", StringComparison.Ordinal) || encoder.EndsWith("_qsv", StringComparison.Ordinal);
+        if (!env.GpuTurbo || !gpu || effects || fps is not null || deinterlace || hdr || video.Rotation != 0
+            || !video.Is8Bit420 || video.Codec is not ("h264" or "hevc" or "av1" or "vp9" or "mpeg2video"))
+        {
+            return false;
+        }
+
+        var size = VideoGeometry.Compute(video.Width, video.Height, o);
+        if (size is null)
+        {
+            return true;
+        }
+
+        var sourceAspect = (double)video.Width / Math.Max(1, video.Height);
+        if (Math.Abs((double)size.Value.Width / size.Value.Height - sourceAspect) > 0.01)
+        {
+            return false;
+        }
+
+        scale = size;
+        return true;
+    }
+
+    private static string Or(string value, string fallback) => string.IsNullOrEmpty(value) || value == "unknown" ? fallback : value;
 
     /// <summary>Re-encode options that stay as close as possible to the source (exact trim in the same format).</summary>
     public static VideoOptions SameFormatOptions(MediaInfo info)
@@ -220,6 +324,227 @@ public static class FfmpegCommands
     }
 
     /// <summary>Repeats a file without re-encoding (count = total plays) or up to a target length.</summary>
+    /// <summary>
+    /// Godot video (.ogv): Theora video and Vorbis audio, even dimensions, yuv420p. Godot 4 plays only this format.
+    /// </summary>
+    public static FfmpegCommand GodotVideo(MediaInfo info, string input, string output, GodotVideoOptions o)
+    {
+        var a = new List<string>();
+        AddInput(a, input, null);
+        var video = info.MainVideo ?? throw new ConversionException("ErrNoVideoStream");
+        var filters = new List<string>();
+        if (o.MaxHeight > 0 && video.DisplaySize.Height > o.MaxHeight)
+        {
+            filters.Add($"scale=-2:{o.MaxHeight}:flags=lanczos");
+        }
+        else
+        {
+            filters.Add("scale=trunc(iw/2)*2:trunc(ih/2)*2");
+        }
+
+        if (o.Fps > 0)
+        {
+            filters.Add($"fps={o.Fps}");
+        }
+
+        a.AddRange(["-map", $"0:{video.Index}", "-vf", string.Join(",", filters), "-c:v", "libtheora",
+            "-q:v", Math.Clamp(o.Quality, 0, 10).ToString(CultureInfo.InvariantCulture), "-pix_fmt", "yuv420p"]);
+        if (o.AudioQuality >= 0 && info.MainAudio is { } track)
+        {
+            a.AddRange(["-map", $"0:{track.Index}", "-c:a", "libvorbis", "-q:a", Math.Clamp(o.AudioQuality, 0, 10).ToString(CultureInfo.InvariantCulture)]);
+        }
+        else
+        {
+            a.Add("-an");
+        }
+
+        a.AddRange(["-sn", "-map_metadata", "-1", output]);
+        return new FfmpegCommand(a, Duration(info, null), []);
+    }
+
+    /// <summary>Frames of a video as PNG files (sprite sheets): <paramref name="pattern"/> like "f%05d.png".</summary>
+    public static IReadOnlyList<string> FramesArgs(string input, string pattern, int fps) =>
+        ["-i", input, "-vf", $"fps={Math.Clamp(fps, 1, 60)}", "-an", "-sn", pattern];
+
+    public static FfmpegCommand Frames(string input, string pattern, int fps) => new(FramesArgs(input, pattern, fps), 0, []);
+
+    /// <summary>All frames of a video as numbered PNG files (frame-wise AI processing), original timing.</summary>
+    public static FfmpegCommand AllFrames(MediaInfo info, string input, string pattern)
+    {
+        var video = info.MainVideo ?? throw new ConversionException("ErrNoVideoStream");
+        return new FfmpegCommand(["-i", input, "-map", $"0:{video.Index}", "-fps_mode", "passthrough", "-an", "-sn", "-start_number", "1", pattern],
+            info.DurationSeconds, []);
+    }
+
+    /// <summary>
+    /// Numbered frames → H.264 video (yuv420p, even size) at <paramref name="fps"/>, audio taken from the source
+    /// (<paramref name="audioFrom"/> null = no audio). MP4 gets AAC, other containers copy the audio.
+    /// </summary>
+    public static FfmpegCommand FromFrames(string pattern, double fps, string? audioFrom, MediaInfo? audioInfo, string output, int crf,
+        double expectedSeconds, double resize = 1)
+    {
+        var rate = fps > 0 ? fps.ToString("0.###", CultureInfo.InvariantCulture) : "30";
+        var a = new List<string> { "-framerate", rate, "-start_number", "1", "-i", pattern };
+        var hasAudio = audioFrom is not null && audioInfo?.MainAudio is not null;
+        if (hasAudio)
+        {
+            a.AddRange(["-i", audioFrom!]);
+        }
+
+        var r = resize.ToString("0.####", CultureInfo.InvariantCulture);
+        var scale = Math.Abs(resize - 1) < 0.0001 ? "scale=trunc(iw/2)*2:trunc(ih/2)*2" : $"scale=trunc(iw*{r}/2)*2:trunc(ih*{r}/2)*2:flags=lanczos";
+        a.AddRange(["-map", "0:v:0", "-vf", scale, "-c:v", "libx264", "-preset", "medium",
+            "-crf", Math.Clamp(crf, 0, 51).ToString(CultureInfo.InvariantCulture), "-pix_fmt", "yuv420p"]);
+        if (hasAudio)
+        {
+            a.AddRange(["-map", $"1:{audioInfo!.MainAudio!.Index}"]);
+            a.AddRange(IsMp4Like(output) ? ["-c:a", "aac", "-b:a", "192k"] : ["-c:a", "copy"]);
+            a.Add("-shortest");
+        }
+
+        if (IsMp4Like(output))
+        {
+            AddFastStart(a);
+        }
+
+        a.Add(output);
+        return new FfmpegCommand(a, expectedSeconds, []);
+    }
+
+    /// <summary>Video denoise filter chain ("" = off). Strength 1–10.</summary>
+    public static string DenoiseVideoFilter(VideoDenoise mode, int strength)
+    {
+        var s = Math.Clamp(strength, 1, 10);
+        string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+        return mode switch
+        {
+            VideoDenoise.Fast => $"hqdn3d={F(s * 0.8)}:{F(s * 0.6)}:{F(s * 1.2)}:{F(s * 0.9)}",
+            VideoDenoise.Quality => $"nlmeans=s={F(1 + s * 0.8)}:p=7:r=15",
+            VideoDenoise.QualityGpu => $"hwupload,nlmeans_vulkan=s={F(1 + s * 0.8)}:p=7:r=15,hwdownload,format=yuv420p",
+            _ => ""
+        };
+    }
+
+    /// <summary>Audio denoise filter ("" = off). Strength 1–10.</summary>
+    public static string DenoiseAudioFilter(AudioDenoise mode, int strength)
+    {
+        var s = Math.Clamp(strength, 1, 10);
+        return mode switch
+        {
+            // Noise reduction in dB (afftdn: 0.01–97, default 12).
+            AudioDenoise.Spectral => $"afftdn=nr={(4 + s * 3).ToString(CultureInfo.InvariantCulture)}:nf=-40:tn=1",
+            AudioDenoise.NonLocal => $"anlmdn=s={(0.0002 * s).ToString("0.####", CultureInfo.InvariantCulture)}",
+            _ => ""
+        };
+    }
+
+    /// <summary>
+    /// Denoise: video gets the filter and H.264, audio the filter (AAC in MP4/MOV, otherwise the source codec family
+    /// is not kept: FLAC for audio files that are lossless, else AAC/Opus by container).
+    /// </summary>
+    public static FfmpegCommand Denoise(MediaInfo info, string input, string output, DenoiseOptions o)
+    {
+        var a = new List<string>();
+        AddInput(a, input, null);
+        var videoFilter = DenoiseVideoFilter(o.Video, o.VideoStrength);
+        var audioFilter = DenoiseAudioFilter(o.Audio, o.AudioStrength);
+        var ext = MediaTypes.Extension(output);
+        if (info.MainVideo is { } video)
+        {
+            a.AddRange(["-map", $"0:{video.Index}"]);
+            if (videoFilter.Length > 0)
+            {
+                a.AddRange(["-vf", videoFilter + (o.Video == VideoDenoise.QualityGpu ? "" : ",format=yuv420p"), "-c:v", "libx264", "-preset", "medium",
+                    "-crf", Math.Clamp(o.VideoCrf, 0, 51).ToString(CultureInfo.InvariantCulture)]);
+            }
+            else
+            {
+                a.AddRange(["-c:v", "copy"]);
+            }
+        }
+
+        if (info.MainAudio is { } track)
+        {
+            a.AddRange(["-map", $"0:{track.Index}"]);
+            if (audioFilter.Length > 0)
+            {
+                a.AddRange(["-af", audioFilter]);
+                a.AddRange(ext switch
+                {
+                    "flac" => ["-c:a", "flac"],
+                    "wav" => ["-c:a", "pcm_s16le"],
+                    "mp3" => ["-c:a", "libmp3lame", "-q:a", "2"],
+                    "ogg" or "oga" => ["-c:a", "libvorbis", "-q:a", "6"],
+                    "opus" or "webm" => ["-c:a", "libopus", "-b:a", "160k"],
+                    _ => ["-c:a", "aac", "-b:a", "192k"]
+                });
+            }
+            else
+            {
+                a.AddRange(["-c:a", "copy"]);
+            }
+        }
+
+        if (IsMp4Like(output))
+        {
+            AddFastStart(a);
+        }
+
+        a.Add(output);
+        return new FfmpegCommand(a, info.DurationSeconds, []);
+    }
+
+    /// <summary>FFmpeg motion interpolation (no module): fps × factor, or slow motion at the original rate.</summary>
+    public static FfmpegCommand Minterpolate(MediaInfo info, string input, string output, InterpolateOptions o)
+    {
+        var video = info.MainVideo ?? throw new ConversionException("ErrNoVideoStream");
+        var fps = video.Fps > 0 ? video.Fps : 30;
+        var factor = Math.Clamp(o.Factor, 2, 8);
+        var target = (fps * factor).ToString("0.###", CultureInfo.InvariantCulture);
+        var filter = $"minterpolate=fps={target}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1";
+        if (o.SlowMotion)
+        {
+            filter += $",setpts={factor}*PTS,fps={fps.ToString("0.###", CultureInfo.InvariantCulture)}";
+        }
+
+        var a = new List<string>();
+        AddInput(a, input, null);
+        a.AddRange(["-map", $"0:{video.Index}", "-vf", filter + ",format=yuv420p", "-c:v", "libx264", "-preset", "medium",
+            "-crf", Math.Clamp(o.VideoCrf, 0, 51).ToString(CultureInfo.InvariantCulture)]);
+        if (!o.SlowMotion && info.MainAudio is { } track)
+        {
+            a.AddRange(["-map", $"0:{track.Index}", "-c:a", "aac", "-b:a", "192k"]);
+        }
+        else
+        {
+            a.Add("-an");
+        }
+
+        AddFastStart(a);
+        a.Add(output);
+        return new FfmpegCommand(a, info.DurationSeconds * (o.SlowMotion ? factor : 1), []);
+    }
+
+    /// <summary>
+    /// Joins parts with identical encoding settings (multi-cut) without re-encoding: concat demuxer with a list file.
+    /// Lines look like <c>file 'C:/path/part1.mp4'</c> (forward slashes, single quotes escaped).
+    /// </summary>
+    public static FfmpegCommand Concat(string listFile, string output, double expectedSeconds)
+    {
+        var a = new List<string> { "-f", "concat", "-safe", "0", "-i", listFile, "-map", "0", "-c", "copy" };
+        if (IsMp4Like(output))
+        {
+            AddFastStart(a);
+        }
+
+        a.Add(output);
+        return new FfmpegCommand(a, expectedSeconds, []);
+    }
+
+    /// <summary>Content of the concat list file for the parts.</summary>
+    public static string ConcatList(IEnumerable<string> parts) =>
+        string.Join("\n", parts.Select(p => $"file '{p.Replace('\\', '/').Replace("'", "'\\''")}'")) + "\n";
+
     public static FfmpegCommand Loop(string input, string output, double segmentSeconds, int playCount, double? targetSeconds)
     {
         playCount = Math.Max(1, playCount);
@@ -565,8 +890,13 @@ public static class FfmpegCommands
             ? "\"" + arg.Replace("\"", "\\\"") + "\""
             : arg));
 
-    private static void AddInput(List<string> a, string input, ClipRange? clip)
+    private static void AddInput(List<string> a, string input, ClipRange? clip, IReadOnlyList<string>? inputArgs = null)
     {
+        if (inputArgs is { Count: > 0 })
+        {
+            a.AddRange(inputArgs);
+        }
+
         // Input options: accurate seek (decoding starts at the keyframe, output starts exactly at Start)
         // and a read limit, so filters such as reverse only see the selected part.
         if (clip is not null && clip.Start > 0)
@@ -631,9 +961,13 @@ public static class FfmpegCommands
         _ => null
     };
 
+    /// <summary>Software encoders with a two-pass mode (libx264, libx265, libvpx-vp9).</summary>
+    public static bool SupportsTwoPass(string encoder) => encoder is "libx264" or "libx265" or "libvpx-vp9";
+
     /// <summary>
-    /// Two-pass bitrate encode (libx264): pass 1 only writes statistics (no audio, null muxer), pass 2 the file.
-    /// Hits a target size much more exactly than a single pass.
+    /// Two-pass bitrate encode: pass 1 only writes statistics (no audio, null muxer), pass 2 the file. Hits a target
+    /// size much more exactly than a single pass. libx265 gets its statistics via -x265-params; because that list is
+    /// colon separated, a relative file name is used and the process runs in the statistics folder.
     /// </summary>
     public static (FfmpegCommand Pass1, FfmpegCommand Pass2) TwoPass(FfmpegCommand command, string passLogPrefix)
     {
@@ -641,10 +975,34 @@ public static class FfmpegCommands
         var output = args[^1];
         args.RemoveAt(args.Count - 1);
 
+        var x265 = args.IndexOf("-x265-params");
+        if (x265 >= 0 && x265 + 1 < args.Count)
+        {
+            var folder = Path.GetDirectoryName(passLogPrefix);
+            var stats = X265StatsName(passLogPrefix);
+            List<string> With(int pass)
+            {
+                var copy = new List<string>(args);
+                copy[x265 + 1] = $"{args[x265 + 1]}:pass={pass}:stats={stats}";
+                return copy;
+            }
+
+            var x1 = With(1);
+            x1.AddRange(["-an", "-sn", "-f", "null", "-"]);
+            var x2 = With(2);
+            x2.Add(output);
+            return (new FfmpegCommand(x1, command.ExpectedSeconds, []) { WorkingDirectory = folder, UsesHardwareDecode = command.UsesHardwareDecode },
+                new FfmpegCommand(x2, command.ExpectedSeconds, command.Warnings) { WorkingDirectory = folder, UsesHardwareDecode = command.UsesHardwareDecode });
+        }
+
         var pass1 = new List<string>(args) { "-pass", "1", "-passlogfile", passLogPrefix, "-an", "-sn", "-f", "null", "-" };
         var pass2 = new List<string>(args) { "-pass", "2", "-passlogfile", passLogPrefix, output };
-        return (new FfmpegCommand(pass1, command.ExpectedSeconds, []), new FfmpegCommand(pass2, command.ExpectedSeconds, command.Warnings));
+        return (new FfmpegCommand(pass1, command.ExpectedSeconds, []) { UsesHardwareDecode = command.UsesHardwareDecode },
+            new FfmpegCommand(pass2, command.ExpectedSeconds, command.Warnings) { UsesHardwareDecode = command.UsesHardwareDecode });
     }
+
+    /// <summary>Statistics file name of an x265 two-pass encode (relative to the folder of the prefix).</summary>
+    public static string X265StatsName(string passLogPrefix) => Path.GetFileName(passLogPrefix) + ".x265.log";
 
     private static string AudioFades(double fadeIn, double fadeOut, double duration)
     {
@@ -757,7 +1115,8 @@ public static class FfmpegCommands
             var buf = kbps * 2 + "k";
             if (nvenc)
             {
-                a.AddRange(["-rc", "vbr", "-b:v", b, "-maxrate", max, "-bufsize", buf]);
+                // Two passes inside one run: hits target sizes much closer than a plain single pass.
+                a.AddRange(["-rc", "vbr", "-multipass", "fullres", "-b:v", b, "-maxrate", max, "-bufsize", buf]);
             }
             else if (amf)
             {
@@ -779,7 +1138,18 @@ public static class FfmpegCommands
             ? FormatCatalog.CrfFor(codec, o.QualityPreset)
             : Math.Clamp(o.Crf, 0, FormatCatalog.CrfMax(codec));
         var q = crf.ToString(CultureInfo.InvariantCulture);
-        if (nvenc)
+        if (nvenc || qsv || amf)
+        {
+            // Hardware encoders use their own scales (see FormatCatalog.HardwareQuality).
+            q = FormatCatalog.HardwareQuality(encoder, codec, crf).ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (nvenc && crf == 0 && codec != VideoCodec.Av1)
+        {
+            // CQ 0 means "automatic" for NVENC; lossless needs its own tuning.
+            a.AddRange(["-tune", "lossless"]);
+        }
+        else if (nvenc)
         {
             a.AddRange(["-rc", "vbr", "-cq", q, "-b:v", "0"]);
         }

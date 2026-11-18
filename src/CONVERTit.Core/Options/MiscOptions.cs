@@ -5,6 +5,8 @@ namespace CONVERTit.Core.Options;
 /// <summary>Image › Icon: multi-size ICO and optional favicon package.</summary>
 public sealed partial class IconOptions : ObservableObject
 {
+    [ObservableProperty] private IconExport _export = IconExport.Ico;
+
     [ObservableProperty] private bool _size16 = true;
     [ObservableProperty] private bool _size24 = true;
     [ObservableProperty] private bool _size32 = true;
@@ -62,6 +64,17 @@ public sealed partial class TrimOptions : ObservableObject
     [ObservableProperty] private double _loopTargetSeconds = 60;
 
     [ObservableProperty] private TrimOutput _output = TrimOutput.SameFormat;
+
+    /// <summary>Multi-cut: segments between cuts (empty = no cuts, start/end marks apply).</summary>
+    public List<Ffmpeg.TrimSegment> Segments { get; set; } = [];
+
+    /// <summary>Multi-cut: every kept segment becomes its own file instead of one joined file.</summary>
+    [ObservableProperty] private bool _segmentsSeparate;
+
+    /// <summary>GIF / animated WebP output of the trim pages.</summary>
+    [ObservableProperty] private int _animationWidth = 480;
+
+    [ObservableProperty] private int _animationFps = 15;
 }
 
 /// <summary>Video › GIF / Animated WebP.</summary>
@@ -219,4 +232,75 @@ public sealed class CompressProfile
         setup(options);
         return new CompressProfile { NameKey = key, Name = key, Options = options };
     }
+}
+
+/// <summary>Video › Godot video: Ogg Theora + Vorbis for Godot's VideoStreamPlayer.</summary>
+public sealed partial class GodotVideoOptions : ObservableObject
+{
+    /// <summary>Theora quality 0–10 (7 = good, 9–10 = very large files).</summary>
+    [ObservableProperty] private int _quality = 7;
+
+    /// <summary>Maximum height (0 = original), e.g. 1080, 720.</summary>
+    [ObservableProperty] private int _maxHeight = 1080;
+
+    /// <summary>Frame rate (0 = original). Godot plays 30 fps videos most smoothly on weak devices.</summary>
+    [ObservableProperty] private int _fps;
+
+    /// <summary>Vorbis audio quality 0–10; -1 = no audio.</summary>
+    [ObservableProperty] private int _audioQuality = 5;
+}
+
+/// <summary>Tools › Upscale (AI): images and videos (frame by frame).</summary>
+public sealed partial class UpscaleOptions : ObservableObject
+{
+    [ObservableProperty] private UpscaleEngine _engine = UpscaleEngine.RealEsrganPhoto;
+
+    /// <summary>Scale factor 2, 3 or 4 (Real-ESRGAN x4 models downscale their result for 2/3).</summary>
+    [ObservableProperty] private int _scale = 4;
+
+    /// <summary>waifu2x denoise level: -1 = off, 0–3.</summary>
+    [ObservableProperty] private int _noise = 1;
+
+    /// <summary>Tile size for the GPU (0 = automatic); smaller tiles need less video memory.</summary>
+    [ObservableProperty] private int _tileSize;
+
+    /// <summary>Image result: png (lossless), jpg or webp.</summary>
+    [ObservableProperty] private string _imageFormat = "png";
+
+    /// <summary>Video quality of the re-encoded result (x264 CRF).</summary>
+    [ObservableProperty] private int _videoCrf = 18;
+
+    /// <summary>GPU index for the ncnn tools (-1 = automatic).</summary>
+    [ObservableProperty] private int _gpu = -1;
+}
+
+/// <summary>Tools › Denoise: FFmpeg filters for video and audio.</summary>
+public sealed partial class DenoiseOptions : ObservableObject
+{
+    [ObservableProperty] private VideoDenoise _video = VideoDenoise.Fast;
+
+    /// <summary>Strength 1–10 (mapped to the filter parameters).</summary>
+    [ObservableProperty] private int _videoStrength = 4;
+
+    [ObservableProperty] private AudioDenoise _audio = AudioDenoise.Off;
+
+    /// <summary>Strength 1–10.</summary>
+    [ObservableProperty] private int _audioStrength = 4;
+
+    /// <summary>Video quality of the re-encoded result (x264 CRF).</summary>
+    [ObservableProperty] private int _videoCrf = 18;
+}
+
+/// <summary>Tools › Interpolate frames: smoother motion or slow motion.</summary>
+public sealed partial class InterpolateOptions : ObservableObject
+{
+    [ObservableProperty] private InterpolationEngine _engine = InterpolationEngine.Rife;
+
+    /// <summary>Frame multiplier 2, 3 or 4.</summary>
+    [ObservableProperty] private int _factor = 2;
+
+    /// <summary>Slow motion: keep the original frame rate (playback becomes Factor× slower, audio is dropped).</summary>
+    [ObservableProperty] private bool _slowMotion;
+
+    [ObservableProperty] private int _videoCrf = 18;
 }

@@ -189,6 +189,7 @@ public static class CompressPlanner
         {
             Format = format,
             Quality = Math.Clamp(o.ImageQuality, 1, 100),
+            JpegQuality = Math.Clamp(o.ImageQuality, 1, 100),
             PngCompression = 9,
             PngPalette = false,
             KeepTransparency = true,

@@ -1,12 +1,14 @@
 namespace CONVERTit.Engines.Ffmpeg;
 
-public enum FfmpegSource { Missing, Custom, Downloaded, AppFolder, SystemPath }
+public enum FfmpegSource { Missing, Custom, Downloaded, Shared, AppFolder, SystemPath }
 
 /// <summary>
 /// Finds ffmpeg/ffprobe: custom path from the settings, the downloaded copy in the data folder,
-/// a copy next to the app (bin\ffmpeg) or the PATH. FFmpeg is never bundled with CONVERTit.
+/// further folders (older download location, the shared module folder C:\ProgramData\CONVERTit\modules\ffmpeg that the
+/// installer writes for all users), a copy next to the app (bin\ffmpeg) or the PATH. FFmpeg is never bundled with CONVERTit.
 /// </summary>
-public sealed class FfmpegLocator(string toolsDirectory, Func<string?> customPath)
+public sealed class FfmpegLocator(string toolsDirectory, Func<string?> customPath, IReadOnlyList<string>? sharedDirectories = null,
+    string? legacyDirectory = null)
 {
     private static readonly string Exe = OperatingSystem.IsWindows() ? ".exe" : "";
 
@@ -44,6 +46,19 @@ public sealed class FfmpegLocator(string toolsDirectory, Func<string?> customPat
         if (TryFolder(ToolsDirectory, out var downloadedFfmpeg, out var downloadedProbe))
         {
             return (downloadedFfmpeg, downloadedProbe, FfmpegSource.Downloaded);
+        }
+
+        if (TryFolder(legacyDirectory, out var legacyFfmpeg, out var legacyProbe))
+        {
+            return (legacyFfmpeg, legacyProbe, FfmpegSource.Downloaded);
+        }
+
+        foreach (var dir in sharedDirectories ?? [])
+        {
+            if (TryFolder(dir, out var f, out var p))
+            {
+                return (f, p, FfmpegSource.Shared);
+            }
         }
 
         foreach (var dir in new[] { Path.Combine(AppContext.BaseDirectory, "bin", "ffmpeg"), Path.Combine(AppContext.BaseDirectory, "ffmpeg") })

@@ -53,6 +53,10 @@ public sealed class FfprobeService(FfmpegRunner runner)
                             Fps = Rate(Str(s, "avg_frame_rate")) is var avg and > 0 ? avg : Rate(Str(s, "r_frame_rate")),
                             Bitrate = Long(s, "bit_rate"),
                             Rotation = Rotation(s),
+                            ColorTransfer = Str(s, "color_transfer"),
+                            ColorPrimaries = Str(s, "color_primaries"),
+                            ColorSpace = Str(s, "color_space"),
+                            FieldOrder = Str(s, "field_order"),
                             IsCoverArt = attached || codec is "mjpeg" or "png" && Str(s, "avg_frame_rate") == "0/0"
                         });
                         break;

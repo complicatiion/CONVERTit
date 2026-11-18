@@ -6,8 +6,11 @@ namespace CONVERTit.Platform.Windows;
 /// <summary>One entry of the "CONVERTit" submenu: action id passed to the app and its display text.</summary>
 public sealed record ExplorerVerb(string Id, string Label);
 
-/// <summary>Submenu for one group of file types (video, audio or images).</summary>
-public sealed record ExplorerMenuGroup(IReadOnlyCollection<string> Extensions, IReadOnlyList<ExplorerVerb> Verbs);
+/// <summary>
+/// Submenu for one group of file types (video, audio or images). <paramref name="AppliesTo"/> is an optional
+/// Windows Search filter, e.g. only files named Thumbs.db among all .db files.
+/// </summary>
+public sealed record ExplorerMenuGroup(IReadOnlyCollection<string> Extensions, IReadOnlyList<ExplorerVerb> Verbs, string? AppliesTo = null);
 
 /// <summary>
 /// Classic Explorer context menu (Windows 10 menu; on Windows 11 under "Show more options"). Static cascading verbs
@@ -35,6 +38,10 @@ public static class ExplorerMenu
                     // Empty SubCommands = the entries below "shell" form the submenu.
                     key.SetValue("SubCommands", "");
                     key.SetValue("MultiSelectModel", "Player");
+                    if (group.AppliesTo is { Length: > 0 } filter)
+                    {
+                        key.SetValue("AppliesTo", filter);
+                    }
                 }
 
                 for (var i = 0; i < group.Verbs.Count; i++)

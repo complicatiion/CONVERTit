@@ -23,6 +23,36 @@ public sealed class FfmpegRunner(FfmpegLocator locator)
     /// <summary>Hook for the platform layer (e.g. Windows job object: children die with the app).</summary>
     public Action<Process>? ProcessStarted { get; set; }
 
+    private readonly HashSet<Process> _running = [];
+
+    /// <summary>Applies a change to every running conversion process (priority, EcoQoS after a profile change).</summary>
+    public void ForEachRunning(Action<Process> action)
+    {
+        Process[] running;
+        lock (_running)
+        {
+            running = [.. _running];
+        }
+
+        foreach (var process in running)
+        {
+            try
+            {
+                if (!process.HasExited)
+                {
+                    action(process);
+                }
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                // Process ended in the meantime.
+            }
+        }
+    }
+
+    /// <summary>Sets the priority of a conversion process (ignored when it already exited).</summary>
+    public static void SetPriority(Process process, ProcessPriorityClass priority) => TrySetPriority(process, priority);
+
     /// <summary>Runs one conversion step and maps its progress into [from, to] of the job.</summary>
     public async Task RunAsync(FfmpegCommand command, JobContext context, double from = 0, double to = 1)
     {
@@ -34,9 +64,18 @@ public sealed class FfmpegRunner(FfmpegLocator locator)
         var errors = new LinkedList<string>();
         var parser = new ProgressParser();
         using var process = Create(ffmpeg, args);
+        if (command.WorkingDirectory is { Length: > 0 } folder && Directory.Exists(folder))
+        {
+            process.StartInfo.WorkingDirectory = folder;
+        }
+
         process.Start();
         TrySetPriority(process, Priority);
         ProcessStarted?.Invoke(process);
+        lock (_running)
+        {
+            _running.Add(process);
+        }
 
         await using var registration = context.CancellationToken.Register(() => Kill(process));
 
@@ -79,8 +118,19 @@ public sealed class FfmpegRunner(FfmpegLocator locator)
             }
         });
 
-        await process.WaitForExitAsync().ConfigureAwait(false);
-        await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
+        try
+        {
+            await process.WaitForExitAsync().ConfigureAwait(false);
+            await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (_running)
+            {
+                _running.Remove(process);
+            }
+        }
+
         context.CancellationToken.ThrowIfCancellationRequested();
 
         if (process.ExitCode != 0)

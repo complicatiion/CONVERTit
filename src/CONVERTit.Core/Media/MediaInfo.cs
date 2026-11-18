@@ -58,6 +58,25 @@ public sealed class VideoStreamInfo
 
     public bool IsCoverArt { get; init; }
 
+    /// <summary>ffprobe color_transfer (e.g. "smpte2084" = HDR10/PQ, "arib-std-b67" = HLG).</summary>
+    public string ColorTransfer { get; init; } = "";
+
+    public string ColorPrimaries { get; init; } = "";
+
+    public string ColorSpace { get; init; } = "";
+
+    /// <summary>ffprobe field_order: "progressive", "tt", "bb", "tb", "bt" (interlaced) or empty (unknown).</summary>
+    public string FieldOrder { get; init; } = "";
+
+    /// <summary>HDR (PQ or HLG transfer): needs tone mapping for SDR output.</summary>
+    public bool IsHdr => ColorTransfer is "smpte2084" or "arib-std-b67";
+
+    /// <summary>Interlaced material (DVD, TV recordings): deinterlaced automatically.</summary>
+    public bool IsInterlaced => FieldOrder is "tt" or "bb" or "tb" or "bt";
+
+    /// <summary>8-bit 4:2:0 picture (the formats a full GPU pipeline handles).</summary>
+    public bool Is8Bit420 => PixelFormat is "yuv420p" or "yuvj420p" or "nv12";
+
     public bool HasAlpha => PixelFormatHasAlpha(PixelFormat);
 
     /// <summary>Width/height as shown (rotation 90/270 swaps them).</summary>
