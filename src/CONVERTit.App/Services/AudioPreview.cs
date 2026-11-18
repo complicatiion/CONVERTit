@@ -27,12 +27,20 @@ public sealed class AudioPreview(PlayerService players) : IDisposable
             }
             else
             {
-                _player.SetPause(false);
-                if (!_player.IsPlaying && _media is not null)
+                if (_player.State is VLCState.Ended or VLCState.Stopped or VLCState.Error && _media is not null)
                 {
-                    // Ended: start again from the beginning.
+                    // Ended: some LibVLC versions do not restart a finished media with Play() alone – stop first.
+                    var current = _player;
                     var media = _media;
-                    ThreadPool.QueueUserWorkItem(_ => _player?.Play(media));
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        current.Stop();
+                        current.Play(media);
+                    });
+                }
+                else
+                {
+                    _player.SetPause(false);
                 }
             }
 

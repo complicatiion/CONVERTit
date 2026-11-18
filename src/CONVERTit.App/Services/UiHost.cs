@@ -67,6 +67,28 @@ public sealed class UiHost
         return await dialog.ShowDialog<bool>(MainWindow);
     }
 
+    /// <summary>Opt-in dialog for downloads: true only when the user ticked "I understand" and confirmed.</summary>
+    public async Task<bool> OptInAsync(string title, string message, IReadOnlyList<OptInItem> items, string confirmText, string? understandText = null)
+    {
+        if (MainWindow is null)
+        {
+            return false;
+        }
+
+        return await new OptInWindow(title, message, items, confirmText, understandText).ShowDialog<bool>(MainWindow);
+    }
+
+    /// <summary>Cache cleaning dialog: null when cancelled.</summary>
+    public async Task<CleanCacheChoice?> CleanCacheAsync()
+    {
+        if (MainWindow is null)
+        {
+            return null;
+        }
+
+        return await new CleanCacheWindow().ShowDialog<CleanCacheChoice?>(MainWindow);
+    }
+
     public async Task ShowTextAsync(string title, string text)
     {
         if (MainWindow is null)

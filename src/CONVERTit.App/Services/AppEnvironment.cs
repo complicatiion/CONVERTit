@@ -13,7 +13,7 @@ public static class AppEnvironment
 
     public static string Version { get; } =
         typeof(AppEnvironment).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0]
-        ?? "0.0.5";
+        ?? "0.0.7";
 
     /// <summary>Portable mode: marker file CONVERTit.portable next to the app, data in .\data.</summary>
     public static bool IsPortable { get; } = File.Exists(Path.Combine(AppContext.BaseDirectory, "CONVERTit.portable"));
@@ -22,14 +22,35 @@ public static class AppEnvironment
         ? Path.Combine(AppContext.BaseDirectory, "data")
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CONVERTit");
 
+    /// <summary>Optional modules of this user (portable: data\modules).</summary>
+    public static string ModulesDirectory => Path.Combine(DataDirectory, "modules");
+
+    /// <summary>
+    /// Modules for all users, written by the installer (C:\ProgramData\CONVERTit\modules). Not used by the portable
+    /// version, which keeps everything next to the app.
+    /// </summary>
+    public static string? SharedModulesDirectory => IsPortable
+        ? null
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CONVERTit", "modules");
+
     /// <summary>Downloaded FFmpeg (ffmpeg.exe, ffprobe.exe, LICENSE.txt, download.json).</summary>
-    public static string FfmpegDirectory => Path.Combine(DataDirectory, "tools", "ffmpeg");
+    public static string FfmpegDirectory => Path.Combine(ModulesDirectory, "ffmpeg");
+
+    /// <summary>Download location up to 0.0.6 (still searched).</summary>
+    public static string LegacyFfmpegDirectory => Path.Combine(DataDirectory, "tools", "ffmpeg");
+
+    /// <summary>FFmpeg installed by the setup for all users.</summary>
+    public static IReadOnlyList<string> FfmpegSharedDirectories =>
+        SharedModulesDirectory is { } shared ? [Path.Combine(shared, "ffmpeg")] : [];
 
     public static string SettingsPath => Path.Combine(DataDirectory, "settings.json");
 
     public static string LicensesDirectory => Path.Combine(AppContext.BaseDirectory, "licenses");
 
     public static string ExecutablePath => Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "CONVERTit.exe");
+
+    /// <summary>Name of the HKCU Run entry (start with Windows); the installer writes the same entry.</summary>
+    public const string AutostartName = "CONVERTit";
 
     public static string NotificationIconPath => Path.Combine(AppContext.BaseDirectory, "convertit.png");
 

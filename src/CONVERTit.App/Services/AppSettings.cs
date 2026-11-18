@@ -12,6 +12,9 @@ public enum PriorityOption { Normal, BelowNormal, Idle }
 /// <summary>UI size: Auto follows the screen; the others are fixed scale steps (tablets … 30″+ monitors).</summary>
 public enum DisplayProfile { Auto, ExtraSmall, Small, Medium, Large, ExtraLarge }
 
+/// <summary>Images with real transparency and a JPEG target: keep PNG (default), ask, or convert anyway.</summary>
+public enum TransparencyPolicy { KeepPng, Ask, ToJpeg }
+
 /// <summary>Settings of CONVERTit (data folder\settings.json), including the last used options of every page.</summary>
 public sealed class AppSettings
 {
@@ -57,6 +60,15 @@ public sealed class AppSettings
     /// <summary>ffmpeg.exe or its folder chosen by the user; empty = automatic.</summary>
     public string FfmpegPath { get; set; } = "";
 
+    /// <summary>Look for a new CONVERTit release on GitHub (opt-in, off by default; at most once a day at start).</summary>
+    public bool CheckForUpdates { get; set; }
+
+    /// <summary>Last automatic update check (UTC).</summary>
+    public DateTime? LastUpdateCheck { get; set; }
+
+    /// <summary>Own folders of optional modules (key: module id, e.g. "RealEsrgan").</summary>
+    public Dictionary<string, string> ModuleFolders { get; set; } = [];
+
     /// <summary>Parallel FFmpeg jobs (video/audio).</summary>
     public int MediaParallel { get; set; } = 1;
 
@@ -70,8 +82,8 @@ public sealed class AppSettings
 
     public bool TaskbarProgress { get; set; } = true;
 
-    /// <summary>Windows notification when a batch is finished.</summary>
-    public bool SystemNotifications { get; set; } = true;
+    /// <summary>Windows notification when a batch is finished (off by default; in-app toasts are always shown).</summary>
+    public bool SystemNotifications { get; set; }
 
     /// <summary>Small notifications in the window (bottom right).</summary>
     public bool InAppNotifications { get; set; } = true;
@@ -81,6 +93,56 @@ public sealed class AppSettings
 
     /// <summary>Remember the options of every page.</summary>
     public bool RememberSettings { get; set; } = true;
+
+    /// <summary>File types CONVERTit registers for ("Open with", Default apps).</summary>
+    public AssociationMode Associations { get; set; } = AssociationMode.Off;
+
+    /// <summary>Own list for <see cref="AssociationMode.Custom"/>, e.g. "mkv, flac, webp".</summary>
+    public string CustomAssociations { get; set; } = "";
+
+    /// <summary>Small "i" hints below options (Settings › General; installer option for new users).</summary>
+    public bool ShowHints { get; set; } = true;
+
+    /// <summary>Quick Convert / image targets: what happens with images that have real transparency.</summary>
+    public TransparencyPolicy TransparentImages { get; set; } = TransparencyPolicy.KeepPng;
+
+    /// <summary>Thumbnails in the file lists (Windows thumbnail cache, own cache as fallback).</summary>
+    public bool ListThumbnails { get; set; } = true;
+
+    /// <summary>Performance profile (Auto follows power source and hardware).</summary>
+    public Core.Machine.PerformanceProfile PerformanceProfile { get; set; } = Core.Machine.PerformanceProfile.Auto;
+
+    /// <summary>Decode video sources on the GPU ("-hwaccel auto").</summary>
+    public bool HardwareDecode { get; set; } = true;
+
+    /// <summary>NVIDIA/Intel: whole pipeline on the GPU for plain jobs (Balanced and Maximum profiles).</summary>
+    public bool GpuTurbo { get; set; } = true;
+
+    /// <summary>HDR sources are tone mapped to SDR (unless the target keeps 10-bit HDR).</summary>
+    public bool HdrToSdr { get; set; } = true;
+
+    /// <summary>Interlaced sources are deinterlaced.</summary>
+    public bool AutoDeinterlace { get; set; } = true;
+
+    // ---------------------------------------------------------------- Background & notification area (tray)
+
+    /// <summary>Minimizing hides the window to the notification area.</summary>
+    public bool MinimizeToTray { get; set; }
+
+    /// <summary>Closing hides the window to the notification area instead of exiting (off by default).</summary>
+    public bool CloseToTray { get; set; }
+
+    /// <summary>Started with Windows: stay in the notification area instead of opening the window.</summary>
+    public bool StartInTray { get; set; } = true;
+
+    /// <summary>Explorer actions like "Convert to MP3" run without opening the window.</summary>
+    public bool BackgroundExplorerJobs { get; set; } = true;
+
+    /// <summary>Exit when the background jobs are done (only when CONVERTit was started for them).</summary>
+    public bool ExitAfterBackgroundJobs { get; set; } = true;
+
+    /// <summary>The "keeps running in the notification area" hint was shown once.</summary>
+    public bool TrayHintShown { get; set; }
 
     /// <summary>Hardware encoders: off by default; only tested encoders can be chosen.</summary>
     public bool UseHardwareEncoders { get; set; } = true;
@@ -105,13 +167,38 @@ public sealed class AppSettings
     {
         try
         {
-            return JsonFile.Read<AppSettings>(AppEnvironment.SettingsPath) ?? new AppSettings { IsNew = true };
+            return JsonFile.Read<AppSettings>(AppEnvironment.SettingsPath) ?? FromInstallerDefaults();
         }
         catch
         {
             // Unreadable file: start with defaults, but it is not a first start.
             return new AppSettings();
         }
+    }
+
+    /// <summary>
+    /// First start: the installer can leave defaults.json next to CONVERTit.exe (e.g. "ShowHints": false); every new
+    /// user starts with these values. Missing or unreadable → plain defaults.
+    /// </summary>
+    private static AppSettings FromInstallerDefaults()
+    {
+        AppSettings? defaults = null;
+        try
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "defaults.json");
+            if (File.Exists(path))
+            {
+                defaults = JsonFile.Read<AppSettings>(path);
+            }
+        }
+        catch
+        {
+            // Ignore broken defaults.
+        }
+
+        defaults ??= new AppSettings();
+        defaults.IsNew = true;
+        return defaults;
     }
 
     public void Save()

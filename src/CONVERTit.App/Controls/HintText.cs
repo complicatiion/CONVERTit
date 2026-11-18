@@ -1,14 +1,16 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using CONVERTit.App.Localization;
 
 namespace CONVERTit.App.Controls;
 
 /// <summary>
-/// Short hint below options: "Note: …" / "Hinweis: …" with the prefix in semibold, so users see at a glance that
-/// it is only additional information. The prefix follows the language.
+/// Short hint below options, introduced by a small round "i" in the accent color, so users see at a glance that it
+/// is only additional information. Settings › General › Show hints hides all hints (class "keep" stays visible,
+/// e.g. warnings and the FFmpeg setup note).
 /// </summary>
 public sealed class HintText : TextBlock
 {
@@ -43,9 +45,17 @@ public sealed class HintText : TextBlock
 
     private void Rebuild()
     {
+        var icon = new PathIcon
+        {
+            Width = 13,
+            Height = 13,
+            Margin = new Thickness(0, 0, 6, -2),
+            Data = Application.Current?.FindResource("IconInfo") as Geometry
+        };
+        icon.Bind(TemplatedControl.ForegroundProperty, icon.GetResourceObservable("BrushAccentIcon"));
         Inlines = new InlineCollection
         {
-            new Run(Loc.T("NotePrefix") + " ") { FontWeight = FontWeight.SemiBold },
+            new InlineUIContainer(icon) { BaselineAlignment = BaselineAlignment.Center },
             new Run(Hint ?? "")
         };
     }

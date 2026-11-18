@@ -130,7 +130,7 @@ public sealed class JobStateIconConverter : OneWay
 
 /// <summary>
 /// Choice label with language refresh: values[0] = item, values[1] = LocState.Version (only a trigger).
-/// Parameter selects the format: kbps, rate, vbr, vorbis, flac, width, fps; default = enum label.
+/// Parameter selects the format: kbps, rate, vbr, vorbis, flac, width, fps, height, colors, noise, tile, aquality; default = enum label.
 /// </summary>
 public sealed class LabelMultiConverter : IMultiValueConverter
 {
@@ -146,7 +146,12 @@ public sealed class LabelMultiConverter : IMultiValueConverter
         ("vorbis", int i) => $"q{i} · ≈ {FormatCatalog.VorbisKbps(i)} kbps",
         ("flac", int i) => i == 0 ? $"0 · {Loc.T("Fastest")}" : i == 8 ? $"8 · {Loc.T("Smallest")}" : i.ToString(CultureInfo.InvariantCulture),
         ("width", int i) => i <= 0 ? Loc.T("Original") : $"{i} px",
-        ("fps", int i) => $"{i} fps",
+        ("fps", int i) => i <= 0 ? Loc.T("Original") : $"{i} fps",
+        ("height", int i) => i <= 0 ? Loc.T("Original") : $"{i} p",
+        ("colors", int i) => i <= 0 ? Loc.T("Original") : Loc.F("ColorCount", i),
+        ("noise", int i) => i < 0 ? Loc.T("Off") : Loc.F("NoiseLevel", i),
+        ("tile", int i) => i <= 0 ? Loc.T("Automatic") : $"{i} px",
+        ("aquality", int i) => i < 0 ? Loc.T("RemoveAudio") : $"q{i} · ≈ {FormatCatalog.VorbisKbps(i)} kbps",
         (_, Enum e) => Loc.Enum(e),
         _ => value?.ToString() ?? ""
     };

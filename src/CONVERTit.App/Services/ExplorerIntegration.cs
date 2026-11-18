@@ -20,9 +20,21 @@ public static class ExplorerIntegration
     public const string ImageJpg = "image-jpg";
     public const string ImageWebp = "image-webp";
     public const string EditTags = "tags";
+    public const string VideoTrim = "trim";
+    public const string VideoGif = "gif";
+    public const string Remux = "remux";
+    public const string AudioTrim = "audio-trim";
+    public const string ImageResize = "resize";
+    public const string MakeIcon = "icon";
+    public const string MakeAppIcon = "app-icon";
+    public const string IcoExtract = "ico-extract";
+    public const string Thumbcache = "thumbcache";
+
+    /// <summary>Thumbs.db and thumbcache_*.db only (Windows Search filter on the .db verbs).</summary>
+    private const string ThumbcacheFilter = "System.FileName:~<\"thumbcache_\" OR System.FileName:=\"Thumbs.db\"";
 
     private static IEnumerable<string> AllExtensions =>
-        MediaTypes.VideoExtensions.Concat(MediaTypes.AudioExtensions).Concat(MediaTypes.ImageExtensions);
+        MediaTypes.VideoExtensions.Concat(MediaTypes.AudioExtensions).Concat(MediaTypes.ImageExtensions).Append("db");
 
     /// <summary>Applies the setting (also after an update, when the program path or the language changed).</summary>
     public static void Refresh(AppSettings settings)
@@ -52,22 +64,30 @@ public static class ExplorerIntegration
     public static void Register()
     {
         ExplorerVerb Verb(string id, string key) => new(id, Loc.T(key));
+        // .ico gets its own submenu (export the sizes it contains); Thumbs.db / thumbcache_*.db open in the viewer.
+        var images = MediaTypes.ImageExtensions.Where(e => e != "ico").ToList();
         var groups = new[]
         {
             new ExplorerMenuGroup(MediaTypes.VideoExtensions,
             [
-                Verb(Open, "MenuOpen"), Verb(VideoMp4, "MenuVideoMp4"), Verb(Compress, "MenuCompress"), Verb(ExtractAudio, "MenuExtractAudio")
+                Verb(Open, "MenuOpen"), Verb(VideoMp4, "MenuVideoMp4"), Verb(Compress, "MenuCompress"), Verb(VideoTrim, "MenuTrim"),
+                Verb(VideoGif, "MenuGif"), Verb(Remux, "MenuRemux"), Verb(ExtractAudio, "MenuExtractAudio")
             ]),
             new ExplorerMenuGroup(MediaTypes.AudioExtensions,
             [
                 Verb(Open, "MenuOpen"), Verb(AudioMp3, "MenuAudioMp3"), Verb(AudioOgg, "MenuAudioOgg"), Verb(EditTags, "MenuEditTags"),
-                Verb(Compress, "MenuCompress")
+                Verb(AudioTrim, "MenuTrim"), Verb(Compress, "MenuCompress")
             ]),
-            new ExplorerMenuGroup(MediaTypes.ImageExtensions,
+            new ExplorerMenuGroup(images,
             [
                 Verb(Open, "MenuOpen"), Verb(ImagePng, "MenuImagePng"), Verb(ImageJpg, "MenuImageJpg"), Verb(ImageWebp, "MenuImageWebp"),
-                Verb(Compress, "MenuCompress")
-            ])
+                Verb(ImageResize, "MenuResize"), Verb(Compress, "MenuCompress"), Verb(MakeIcon, "MenuMakeIcon"), Verb(MakeAppIcon, "MenuMakeAppIcon")
+            ]),
+            new ExplorerMenuGroup(["ico"],
+            [
+                Verb(IcoExtract, "MenuIcoExtract"), Verb(Open, "MenuOpen"), Verb(ImagePng, "MenuImagePng")
+            ]),
+            new ExplorerMenuGroup(["db"], [Verb(Thumbcache, "MenuThumbcache")], ThumbcacheFilter)
         };
         ExplorerMenu.Register(AppEnvironment.ExecutablePath, Loc.T("MenuRoot"), groups);
     }

@@ -77,6 +77,12 @@
     <Setter Property="TextWrapping" Value="Wrap" />
     <Setter Property="Margin" Value="0,4,0,0" />
   </Style>
+  <!-- Settings › Show hints off: hints collapse (warnings and the setup note carry the class "keep") -->
+  <Style Selector="Window.nohints ctl|HintText:not(.keep)">
+    <Setter Property="MaxHeight" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+  </Style>
 
   <!-- ===================================================== Surfaces -->
   <Style Selector="Border.card">
@@ -168,6 +174,71 @@
     <Setter Property="Background" Value="{DynamicResource BrushWarningSoft}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BrushWarning}" />
   </Style>
+  <!-- Status dots (dependency overview): orange = missing, accent = ready -->
+  <Style Selector="Ellipse.statusdot">
+    <Setter Property="Fill" Value="{DynamicResource BrushWarning}" />
+  </Style>
+  <Style Selector="Ellipse.statusdot.ready">
+    <Setter Property="Fill" Value="{DynamicResource BrushAccentIcon}" />
+  </Style>
+
+  <!-- Button rows with equal widths (Settings): placed in a one-row UniformGrid, at least 200 px each -->
+  <Style Selector="Button.even">
+    <Setter Property="MinWidth" Value="200" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+  </Style>
+
+  <!-- Thumbnail grid (cache viewer): tiles with an accent frame when selected, no accent fill -->
+  <Style Selector="ListBox.thumbs">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="ListBox.thumbs ListBoxItem">
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="Margin" Value="0,0,8,8" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBox.thumbs ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+  </Style>
+  <Style Selector="ListBox.thumbs ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+  </Style>
+  <Style Selector="ListBox.thumbs ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+  </Style>
+  <Style Selector="ListBox.thumbs ListBoxItem:selected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+  </Style>
+  <!-- Mark badge (star) on a tile -->
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="#CC000000" />
+    <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="Padding" Value="4" />
+  </Style>
+  <Style Selector="Border.badge PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccent}" />
+  </Style>
+  <!-- Select all / none: icon gray, accent when everything is selected -->
+  <Style Selector="Button.selectall PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+  </Style>
+  <Style Selector="Button.selectall.on PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccentIcon}" />
+  </Style>
+  <Style Selector="Button.selectall:pointerover PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="Button.selectall.on:pointerover PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccentIcon}" />
+  </Style>
   <Style Selector="Border.toast">
     <Setter Property="Background" Value="{DynamicResource BrushSurfaceRaised}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
@@ -207,6 +278,17 @@
   </Style>
   <Style Selector="MenuItem:selected /template/ Border#PART_LayoutRoot">
     <Setter Property="Background" Value="{DynamicResource BrushMenuHover}" />
+  </Style>
+
+  <!-- Removing entries (Remove cut, Remove all cuts, Remove from list …): light red instead of the accent -->
+  <Style Selector="MenuItem.danger:pointerover /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+  </Style>
+  <Style Selector="MenuItem.danger:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+  </Style>
+  <Style Selector="MenuItem.danger:pointerover PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
   </Style>
 
   <!-- ===================================================== IconLabel -->
@@ -282,6 +364,20 @@
   <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BrushSurfaceRaised}" />
   </Style>
+  <!-- Close / remove file: light red backdrop, red on hover -->
+  <Style Selector="Button.icon.close /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="Button.icon.close PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
+  </Style>
+  <Style Selector="Button.icon.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushDanger}" />
+  </Style>
+  <Style Selector="Button.icon.close:pointerover PathIcon">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
   <Style Selector="Button.icon.small">
     <Setter Property="Width" Value="28" />
     <Setter Property="Height" Value="28" />
@@ -299,6 +395,54 @@
   </Style>
   <Style Selector="Button.mark ctl|IconLabel">
     <Setter Property="IconSize" Value="18" />
+  </Style>
+
+  <!-- Trim & Loop: range buttons and fields of equal width (Set start/end, Play range, Remove all cuts) -->
+  <Style Selector="Button.rangebtn">
+    <Setter Property="MinWidth" Value="190" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBox.rangebox">
+    <Setter Property="Width" Value="150" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <!-- Fold button ("Range ▾"): flat, the chevron turns when open -->
+  <Style Selector="ToggleButton.fold">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="ToggleButton.fold:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceRaised}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="ToggleButton.fold:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceRaised}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="PathIcon.chevron.fold.expanded">
+    <Setter Property="RenderTransform" Value="rotate(180deg)" />
+  </Style>
+  <!-- Play/pause symbol over the video after a click -->
+  <Style Selector="Border.clickindicator">
+    <Setter Property="Width" Value="76" />
+    <Setter Property="Height" Value="76" />
+    <Setter Property="CornerRadius" Value="38" />
+    <Setter Property="Background" Value="#99000000" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.clickindicator PathIcon">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Border.clickindicator.show">
+    <Setter Property="Opacity" Value="1" />
   </Style>
 
   <!-- Round play button of the player -->
@@ -332,6 +476,35 @@
   </Style>
 
   <!-- Link button -->
+  <!-- Header back/forward: arrow only, no backdrop; accent on hover, faint when not possible -->
+  <Style Selector="Button.navarrow">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.navarrow PathIcon">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+  </Style>
+  <Style Selector="Button.navarrow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccentIcon}" />
+  </Style>
+  <Style Selector="Button.navarrow:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.navarrow:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.navarrow:disabled">
+    <Setter Property="Opacity" Value="0.3" />
+  </Style>
   <Style Selector="Button.link">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -343,6 +516,33 @@
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
   </Style>
+  <!-- Header FFmpeg pill: folded = round check only; the text slides open (MaxWidth animation) -->
+  <Style Selector="Border.pill.headpill">
+    <Setter Property="Padding" Value="9,4" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <ThicknessTransition Property="Padding" Duration="0:0:0.2" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.pill.headpill.folded">
+    <Setter Property="Padding" Value="5" />
+  </Style>
+  <Style Selector="Border.pilltext">
+    <Setter Property="MaxWidth" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="MaxWidth" Duration="0:0:0.24" Easing="CubicEaseOut" />
+        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.pilltext.open">
+    <Setter Property="MaxWidth" Value="420" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
   <!-- Plain button around a pill (header status) -->
   <Style Selector="Button.bare">
     <Setter Property="Background" Value="Transparent" />
@@ -410,6 +610,27 @@
   </Style>
   <Style Selector="Button.nav.selected TextBlock.navtext">
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushChipText}" />
+  </Style>
+  <!-- Queue: icon and text in the accent color, normal nav background. The class must not be "accent":
+       FluentTheme styles Button.accent as a filled accent button. On hover icon and text switch to the
+       normal text color (white in dark mode, black in light mode) on the usual hover backdrop. -->
+  <Style Selector="Button.nav.queuenav PathIcon.navicon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccentIcon}" />
+  </Style>
+  <Style Selector="Button.nav.queuenav TextBlock.navtext">
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccentText}" />
+  </Style>
+  <Style Selector="Button.nav.queuenav:pointerover PathIcon.navicon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="Button.nav.queuenav:pointerover TextBlock.navtext">
+    <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+  </Style>
+  <Style Selector="Button.nav.queuenav.selected PathIcon.navicon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccentIcon}" />
+  </Style>
+  <Style Selector="Button.nav.queuenav.selected TextBlock.navtext">
     <Setter Property="Foreground" Value="{DynamicResource BrushChipText}" />
   </Style>
   <!-- Sub entries: indented, a bit smaller -->
@@ -515,6 +736,24 @@
   <Style Selector="ProgressBar.thin">
     <Setter Property="MinHeight" Value="4" />
     <Setter Property="Height" Value="4" />
+  </Style>
+  <!-- Header line as progress bar: a 1 px border line at rest, 2 px accent while something loads or the queue runs -->
+  <Style Selector="ProgressBar.headline">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="1" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Background" Value="{DynamicResource BrushBorder}" />
+    <Setter Property="Foreground" Value="Transparent" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Height" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="ProgressBar.headline.active">
+    <Setter Property="Height" Value="2" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushAccent}" />
   </Style>
   <Style Selector="ProgressBar.failed">
     <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
