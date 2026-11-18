@@ -69,7 +69,7 @@ public class FfmpegCommandsTests
         var line = Line(c);
         Assert.StartsWith("-ss 10 -t 5 -i in.mkv", line);
         Assert.Contains("scale=720:1280:force_original_aspect_ratio=increase:flags=lanczos,crop=720:1280,setsar=1,fps=30000/1001,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1", line);
-        Assert.Contains("-c:v hevc_nvenc -rc vbr -cq 28 -b:v 0", line);
+        Assert.Contains("-c:v hevc_nvenc -rc vbr -cq 31 -b:v 0", line);
         Assert.Contains("-tag:v hvc1", line);
         Assert.Equal(5, c.ExpectedSeconds);
     }

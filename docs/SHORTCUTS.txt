@@ -1,0 +1,64 @@
+CONVERTit – keyboard and mouse shortcuts
+========================================
+
+Plain keys (without Ctrl/Alt) do nothing while you type in a text field. Esc leaves the field.
+
+Whole app
+---------
+Alt + Left / Right ........ previous / next visited page (also mouse buttons back / forward)
+Ctrl + Up / Down .......... previous / next page in the sidebar
+Ctrl + 1 .................. Quick Convert
+Ctrl + 2 .................. Compress
+Ctrl + 3 .................. Queue
+Ctrl + D .................. Dependencies
+Ctrl + , .................. Settings
+Ctrl + B .................. fold / unfold the sidebar
+F5 ........................ check all dependencies again
+Esc ....................... close the FFmpeg dialog, fold the header status, leave a text field
+Tab / Shift + Tab ......... next / previous control
+Enter / Space ............. press the focused button or switch
+
+File lists (all pages with a file list)
+---------------------------------------
+Ctrl + O .................. add files
+Ctrl + Shift + O .......... add a folder
+Ctrl + A .................. select all files
+Up / Down ................. move through the list (Shift = extend the selection)
+Ctrl / Shift + click ...... select several files
+Del ....................... remove the selected files from the list
+Space ..................... play / pause the selected file (audio lists with the mini player switched on)
+Right-click ............... open, show in folder, copy path, convert only these, send to, remove
+Ctrl + Enter .............. add to queue (all files, or "Add selected" with a selection)
+Ctrl + Shift + Enter ...... Quick Convert: convert right away
+
+Trim & Loop (video and audio)
+-----------------------------
+Space ..................... play / pause (a click on the video works too)
+Left / Right .............. 1 second back / forward (Shift: 10 seconds)
+I / O ..................... set start / end at the playhead
+S or C .................... cut at the playhead
+Del ....................... remove or restore the selected segment
+Right-click on the timeline  cut here, remove/restore segment, keep only this segment, remove cut, remove all cuts
+Drag on the timeline ...... move the playhead, the start/end handles or a cut line
+
+Thumbnail cache viewer
+----------------------
+Click / Ctrl + click / Shift + click  select one / add / range
+Ctrl + A .................. select all            Esc ............ select none
+Double-click, Enter, Space  open the picture in the viewer
+M ......................... mark / unmark the selection (star)
+Ctrl + C .................. copy the picture
+Right-click ............... view, export, copy, send to Upscale, mark, select all/none
+
+In the viewer:
+Left / Right (Up / Down) .. previous / next picture
++ / - or mouse wheel ...... zoom              0 ......... fit           1 ......... 100 %
+M ......................... mark              Ctrl + C .. copy          Esc ....... close
+
+Mouse
+-----
+Wheel ..................... scroll
+Click on the wheel ........ auto-scroll like in a browser: move the mouse up or down, the further away the
+                            faster; the next click, Esc or the wheel ends it. Hold the wheel and drag: scrolls
+                            until you release it.
+App icons preview ......... drag = move the motif, wheel = resize

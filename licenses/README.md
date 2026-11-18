@@ -18,7 +18,8 @@ Components shipped with CONVERTit keep their own copyrights and licenses. Full l
 
 | Component | Version | License | Shipped as | File |
 | --- | --- | --- | --- | --- |
-| FFmpeg (ffmpeg.exe, ffprobe.exe) | latest release branch | LGPL-2.1+ / GPL-3.0 (GPL build) | **not shipped** – download in the app → data folder `tools\ffmpeg\` | [third-party/FFMPEG.md](third-party/FFMPEG.md) |
+| FFmpeg (ffmpeg.exe, ffprobe.exe) | latest release branch | LGPL-2.1+ / GPL-3.0 (GPL build) | **not shipped** – opt-in download in setup or in the app → `modules\ffmpeg\` | [third-party/FFMPEG.md](third-party/FFMPEG.md) |
+| Real-ESRGAN · waifu2x · RIFE (ncnn-vulkan) | pinned releases | BSD-3-Clause · MIT | **not shipped** – optional download on the Dependencies page | [third-party/OPTIONAL-MODULES.md](third-party/OPTIONAL-MODULES.md) |
 | ImageMagick · Magick.NET | 14.x | ImageMagick License · Apache-2.0 (+ native libraries, see notice) | `Magick.*.dll`, `Magick.Native-Q8-x64.dll` | [third-party/MAGICK-NET.md](third-party/MAGICK-NET.md) |
 | LibVLC · LibVLCSharp | 3.0 · 3.9 | LGPL-2.1+ | `libvlc\win-x64\`, `LibVLCSharp*.dll` | [third-party/LIBVLC.md](third-party/LIBVLC.md) |
 | TagLib# (TagLibSharp) | 2.3.0 | LGPL-2.1 | `TagLibSharp.dll` | [third-party/TAGLIBSHARP.md](third-party/TAGLIBSHARP.md) |
@@ -34,4 +35,4 @@ Shared license texts: [Apache License 2.0](third-party/LICENSE-APACHE-2.0.md) ·
 
 Build-time only (not shipped): xUnit (Apache-2.0), Microsoft.NET.Test.Sdk (MIT), Inno Setup (own license, installer only).
 
-**Why CONVERTit can stay MIT:** FFmpeg is never bundled and only started as a separate program; LGPL libraries (LibVLC, TagLib#, libheif/libde265 inside Magick.NET) are shipped unmodified as replaceable dynamic libraries with their license texts and source links.
+**Why CONVERTit can stay MIT:** FFmpeg and the optional AI modules are never bundled and only started as separate programs; LGPL libraries (LibVLC, TagLib#, libheif/libde265 inside Magick.NET) are shipped unmodified as replaceable dynamic libraries with their license texts and source links.
